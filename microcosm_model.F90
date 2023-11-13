@@ -34,9 +34,9 @@
             maxyears,                                                  &
             outputyears,                                               &
             m2deg,                                                     &
-            gaovla_opt,                                                &
-            gamma_in,                                                  &
-            lt_lifein,                                                 &
+!            gaovla_opt,                                                &
+!            gamma_in,                                                  &
+!            lt_lifein,                                                 &
             alpha_yr,                                                  &
             atpco2in,                                                  &
             psi_in,                                                    &
@@ -60,7 +60,9 @@
             fe_input,                                                  &
             dldz_in,                                                   &
             wind_in,                                                   &
-            fopen_in
+            fopen_in,                                                  &
+            pbin,                                                      &
+            ldocin
 
        REAL(KIND=wp), dimension (nbox, nbox) ::                        & 
             Kin,                                                       &
@@ -78,7 +80,9 @@
             fout,                                                      &
             lout,                                                      &
             expout,                                                    &
-            pco2out
+            pco2out,                                                   &
+            pbout,                                                     &
+            ldocout
             
        REAL(KIND=wp), dimension (:), allocatable   ::                  &
             tout,                                                      &
@@ -108,6 +112,8 @@
        allocate ( lout      (outstepmax,nbox) )
        allocate ( expout    (outstepmax,nbox) )
        allocate ( pco2out   (outstepmax,nbox) )
+       allocate ( pbout     (outstepmax,nbox) )
+       allocate ( ldocout   (outstepmax,nbox) )
 
 ! Initialize input arguements
        thin     =      0._wp
@@ -121,6 +127,8 @@
        fein     =      0._wp
        liin     =      2._wp
        atpco2in =    280._wp
+       pbin     =      0._wp
+       ldocin   =      0._wp
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -135,15 +143,15 @@
        
 ! Gamma over lambda for ligands "optimum" value (Lauderdale et al 2020)
 !       gaovla_opt   = 0._wp !4398._wp
-       gaovla_opt   = 4398._wp
+!       gaovla_opt   = 4398._wp
 
 ! Gamma ligand production rate (in phosphate, not carbon, units)
 !       gamma_in     = 0._wp !5.e-5_wp*106._wp
-       gamma_in     = 5.e-5_wp*106._wp
+!       gamma_in     = 5.e-5_wp*106._wp
        
 ! Lambda ligand lifetime (s)
 !       lt_lifein    = 0._wp ! 1._wp/((gamma_in/106._wp)/gaovla_opt)
-       lt_lifein    = 1._wp/((gamma_in/106._wp)/gaovla_opt)
+!       lt_lifein    = 1._wp/((gamma_in/106._wp)/gaovla_opt)
        
 ! Dust deposition in g Fe m-2 year-1
        fe_input     =  0._wp
@@ -423,7 +431,7 @@
             dx, dy, dz, depth, latitude,                               &
             Kin, Rin, Pin,                                             &
             psi_in, dif_in,                                            &
-            alpha_yr, gamma_in, lt_lifein,                             &
+            alpha_yr,                                                  &
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
@@ -450,7 +458,9 @@
             nlout,                                                     &
             psout,                                                     &
             pco2out,                                                   &
-            atpco2out                                                  &
+            atpco2out,                                                 &
+            pbout,                                                     &
+            ldocout                                                    &
             )
 
 !=======================================================================
