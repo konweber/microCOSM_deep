@@ -1190,7 +1190,7 @@ FUNCTION AK_H2S_1_MILL95(t_k, s, p_bar)
 ! Function returns the dissociation constant of hydrogen sulfide in sea-water
 
 
-! References: Millero et al. (1988) (cited by Millero (1995)
+! References: Millero et al. (1988) (cited by Millero (1995))
 !             Millero (1995) for pressure correction
 ! pH scale  : - SWS (according to Yao and Millero, 1995, p. 82: "refitted if necessary")
 !             - Total (according to Lewis and Wallace, 1998)

@@ -31,7 +31,8 @@ REAL(KIND=wp), DIMENSION(nbox, nbox) :: K, R, P
 REAL(KIND=wp) :: psi, dif
  
 ! biogeochemical tracers internal
-REAL(KIND=wp), DIMENSION(nbox) :: theta, salt, dic, alk, po4, no3, fet, lt    
+! Modification: added LDOC and prokaryotic biomass
+REAL(KIND=wp), DIMENSION(nbox) :: theta, salt, dic, alk, po4, no3, fet, lt, ldoc, pb    
 
 ! extra biogeochem...
 REAL(KIND=wp), DIMENSION(nbox) :: ph, sit, carb, feprime, bioP
@@ -39,13 +40,17 @@ REAL(KIND=wp)                  :: pstar
 
 ! some arrays for average accumulators
 REAL(KIND=wp), DIMENSION(nbox) :: thetaM, saltM, exportM, pco2M,          &
-                                  dicM, alkM, po4M, no3M, fetM, ltM, sitM                                   
+                                  dicM, alkM, po4M, no3M, fetM, ltM, sitM 
+! Addition of LDOC and prokaryotic biomass
+REAL(KIND=wp), DIMENSION(nbox) :: ldocM, pbM                                  
 REAL(KIND=wp)                  :: timeM, pco2A, pstarM
 
 ! time derivatives 
 REAL(KIND=wp), DIMENSION(nbox) :: dthetadt, dsaltdt
 REAL(KIND=wp), DIMENSION(nbox) :: ddicdt, dalkdt, dpo4dt, dno3dt,         &
-                                  dfetdt, dltdt, dsitdt  
+                                  dfetdt, dltdt, dsitdt
+! Addition of LDOC and prokaryotic biomass time derivatives
+REAL(KIND=wp), DIMENSION(nbox) :: dldocdt, dpbdt  
 
 ! Redfield ratios      
 REAL(KIND=wp) :: rCP, rNP, rPO2, rCN, rCO2, rCFe, rSIP, rCACO3
@@ -70,11 +75,16 @@ REAL(KIND=wp), DIMENSION(nbox) :: dlambdadz, lambda
 ! export related
 ! half saturation constants 
 REAL(KIND=wp)                  :: kfe, kpo4, kno3, klight
+! Additon of half saturation constant for prokaryotic species
+REAL(KIND=wp)                  :: kfe_p, kldoc_p
 REAL(KIND=wp), DIMENSION(nbox) :: export
 REAL(KIND=wp)                  :: alpha 
 REAL(KIND=wp), DIMENSION(nbox) :: light, ilimit, plimit, nlimit, flimit
 ! nutrient limitation codes
 INTEGER                        :: lim
+
+! prokaryotic parameters
+REAL(KIND=wp)                  :: rFeC_pb, m_l, m_q, kappa, mu0, cue
 
 CONTAINS
 
