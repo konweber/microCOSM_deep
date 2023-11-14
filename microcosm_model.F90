@@ -35,8 +35,8 @@
             outputyears,                                               &
             m2deg,                                                     &
 !            gaovla_opt,                                                &
-!            gamma_in,                                                  &
-!            lt_lifein,                                                 &
+            gamma_in,                                                  &
+            lt_lifein,                                                 &
             alpha_yr,                                                  &
             atpco2in,                                                  &
             psi_in,                                                    &
@@ -82,7 +82,7 @@
             expout,                                                    &
             pco2out,                                                   &
             pbout,                                                     &
-            ldocout
+            ldocout                                                  
             
        REAL(KIND=wp), dimension (:), allocatable   ::                  &
             tout,                                                      &
@@ -91,6 +91,13 @@
 
        INTEGER, dimension (:), allocatable   ::                        &
             nlout
+
+! Logical arrays (nbox, by timestep dimensionesix)
+! l_st_ldoc is true if the ligand concentration is lower than the LDOC concentration (this condition must be fulfilled)
+! felim_p is true if the iron concentration is limiting for the prokaryotic growth
+       LOGICAL, dimension(:,:), allocatable ::                         &
+            l_st_ldoc,                                                 &
+            felim_p
 
        ! Input some initial parameters
        maxyears   = 1.e4_wp
@@ -114,6 +121,8 @@
        allocate ( pco2out   (outstepmax,nbox) )
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
+       allocate ( l_st_ldoc (outstepmax,nbox) )
+       allocate ( felim_p   (outstepmax,nbox) )
 
 ! Initialize input arguements
        thin     =      0._wp
@@ -146,11 +155,11 @@
 !       gaovla_opt   = 4398._wp
 
 ! Gamma ligand production rate (in phosphate, not carbon, units)
-!       gamma_in     = 0._wp !5.e-5_wp*106._wp
+       gamma_in     = 0._wp !5.e-5_wp*106._wp
 !       gamma_in     = 5.e-5_wp*106._wp
        
 ! Lambda ligand lifetime (s)
-!       lt_lifein    = 0._wp ! 1._wp/((gamma_in/106._wp)/gaovla_opt)
+       lt_lifein    = 0._wp ! 1._wp/((gamma_in/106._wp)/gaovla_opt)
 !       lt_lifein    = 1._wp/((gamma_in/106._wp)/gaovla_opt)
        
 ! Dust deposition in g Fe m-2 year-1
@@ -267,7 +276,8 @@
 
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
-       dldz_in(1:6)  = [ 1._wp, 1.e-2_wp, 1._wp, 1.e-2_wp, 1._wp, 1.e-2_wp ]
+! Modification: first order loss in the deep is set to 0
+       dldz_in(1:6)  = [ 1._wp, 0._wp, 1._wp, 0._wp, 1._wp, 0._wp ]
        
 #elif defined(FOURBOX)
 ! For a 20SV AMOC, psi_in (i.e. Southern Ocean upwelling) needs to be 2x
@@ -349,6 +359,7 @@
 
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
+! Modification: first order loss in the deep is set to 0
        dldz_in(1:4)  = [ 1._wp, 1._wp, 1._wp, 1.e-2_wp ]
 #else
 
@@ -424,13 +435,14 @@
         (1.e9_wp*56._wp)/(2.5e-3_wp*dx(3)*dy(3)) ]
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
-       dldz_in(1:3)  = [ 1._wp, 1._wp, 1.e-2_wp ]
+! Modification: first order loss in the deep is set to 0
+       dldz_in(1:3)  = [ 1._wp, 1._wp, 0._wp ]
 #endif       
 
        call model(id, maxyears, outputyears, outstepmax,               &
             dx, dy, dz, depth, latitude,                               &
             Kin, Rin, Pin,                                             &
-            psi_in, dif_in,                                            &
+            psi_in, dif_in, gamma_in, lt_lifein                        &
             alpha_yr,                                                  &
             dldz_in,                                                   &
             fe_input,                                                  &
