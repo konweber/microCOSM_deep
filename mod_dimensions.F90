@@ -77,7 +77,7 @@ REAL(KIND=wp), DIMENSION(nbox), intent(in) :: area
 !       atmos_moles = atmos_moles * area(3)/(5.10082e8 * 1.e6)
 #if defined(SIXBOX)
     CALC_ATMOS_MOLES = ((5.1352e18_wp * 1000._wp) / 28.97_wp)          &
-                        *((area(2)+area(4)+area(6))/                   &
+                        *(area(2)+area(4)+area(6))/                   & ! removed a parenthesis here
 !                        *((area(1)+area(3)+area(5))/                   &
                           (5.10082e8_wp * 1.e6_wp))
 #elif defined(FOURBOX)

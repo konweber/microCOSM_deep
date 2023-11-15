@@ -41,7 +41,7 @@ REAL(KIND=wp)                  :: pstar
 ! some arrays for average accumulators
 REAL(KIND=wp), DIMENSION(nbox) :: thetaM, saltM, exportM, pco2M,          &
                                   dicM, alkM, po4M, no3M, fetM, ltM, sitM 
-! Addition of LDOC and prokaryotic biomass
+! Addition of LDOC and prokaryotic biomass, necessary?
 REAL(KIND=wp), DIMENSION(nbox) :: ldocM, pbM                                  
 REAL(KIND=wp)                  :: timeM, pco2A, pstarM
 
