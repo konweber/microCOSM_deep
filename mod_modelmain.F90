@@ -35,7 +35,7 @@ IMPLICIT NONE
             dif_in,                                                    &    
             alpha_yr,                                                  &
             gamma_in,                                                  &
-            lt_lifein,                                                 &
+!            lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
@@ -49,6 +49,8 @@ IMPLICIT NONE
             fein,                                                      &
             ltin,                                                      &
             atpco2in,                                                  &
+            pbin,                                                      &
+            ldocin,                                                    &
             tout,                                                      &            
             thout,                                                     &
             sout,                                                      &
@@ -62,7 +64,11 @@ IMPLICIT NONE
             nlout,                                                     &
             psout,                                                     &
             ocpco2out,                                                 &
-            atpco2out                                                  &        
+            atpco2out,                                                 &
+            pbout,                                                     &
+            ldocout                                                    &
+            l_st_ldoc,                                                 &
+            felim_p                                                            
             )
 
 !-----------------------------------------------------------------------         

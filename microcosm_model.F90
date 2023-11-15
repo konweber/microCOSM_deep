@@ -439,15 +439,28 @@
        dldz_in(1:3)  = [ 1._wp, 1._wp, 0._wp ]
 #endif       
 
-       call model(id, maxyears, outputyears, outstepmax,               &
-            dx, dy, dz, depth, latitude,                               &
-            Kin, Rin, Pin,                                             &
-            psi_in, dif_in, gamma_in, lt_lifein                        &
+       call model(                                                     &
+            id,                                                        &
+            maxyears,                                                  &
+            outputyears,                                               &
+            outstepmax,                                                &
+            dx,                                                        &
+            dy,                                                        &
+            dz,                                                        &
+            depth,                                                     &
+            latitude,                                                  &
+            Kin,                                                       &
+            Rin,                                                       &
+            Pin,                                                       &
+            psi_in,                                                    &
+            dif_in,                                                    &    
             alpha_yr,                                                  &
+            gamma_in,                                                  &
+!            lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
-            fopen_in,                                                  &
+            foin,                                                      &
             thin,                                                      &
             sain,                                                      &
             cain,                                                      &
@@ -455,9 +468,11 @@
             phin,                                                      &
             niin,                                                      &
             fein,                                                      &
-            liin,                                                      &
+            ltin,                                                      &
             atpco2in,                                                  &
-            tout,                                                      &
+            pbin,                                                      &
+            ldocin,                                                    &
+            tout,                                                      &            
             thout,                                                     &
             sout,                                                      &
             cout,                                                      &
@@ -469,12 +484,12 @@
             expout,                                                    &
             nlout,                                                     &
             psout,                                                     &
-            pco2out,                                                   &
+            ocpco2out,                                                 &
             atpco2out,                                                 &
             pbout,                                                     &
             ldocout                                                    &
             l_st_ldoc,                                                 &
-            felim_p                                                    
+            felim_p   
             )
 
 !=======================================================================
