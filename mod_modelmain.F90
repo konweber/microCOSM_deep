@@ -67,7 +67,7 @@ IMPLICIT NONE
             atpco2out,                                                 &
             pbout,                                                     &
             ldocout                                                    &
-            l_st_ldoc,                                                 &
+            lt_st_ldoc,                                                 &
             felim_p                                                            
             )
 
@@ -98,7 +98,9 @@ IMPLICIT NONE
             fe_input,                                                  &
             dldz_in,                                                   &
             wind_in,                                                   &
-            foin
+            foin,                                                      &
+            pbin,                                                      &
+            ldocin
 
        REAL(KIND=wp), intent(in), dimension (nbox, nbox) ::            &
             Kin, Rin, Pin
@@ -113,7 +115,9 @@ IMPLICIT NONE
             fout,                                                      &
             lout,                                                      &
             expout,                                                    &
-            ocpco2out
+            ocpco2out,                                                 &
+            pbout,                                                     &
+            ldocout
 
        REAL(KIND=wp), intent(out), dimension (outstepmax) ::           &
             tout,                                                      &
@@ -121,7 +125,11 @@ IMPLICIT NONE
             atpco2out
 
        INTEGER, intent(out), dimension (outstepmax) ::                 &
-            nlout                                                     
+            nlout
+
+       LOGICAL, intent(out), dimension (outstepmax,nbox) ::            &
+            lt_st_ldoc,                                                 &
+            felim_p                                                     
 
 ! local variables
 !       include "comdeck.h"
@@ -153,6 +161,9 @@ IMPLICIT NONE
        fet = fein * nmolkg2molm3
        lt  = ltin * nmolkg2molm3
        sit = phin * umolkg2molm3 * rSIP
+       ! Modification: addition of the 2 new input variables
+       ldoc = ldocin * nmolkg2molm3
+       pb = pbin * cellsml2molm3
 
 ! More config/forcing variables
        K   = Kin
@@ -173,7 +184,9 @@ IMPLICIT NONE
        dno3dt   = zero 
        dfetdt   = zero 
        dltdt    = zero 
-       dsitdt   = zero 
+       dsitdt   = zero
+       dldocdt  = zero
+       dpbdt    = zero 
 
 ! Export production parameters (Parekh et al, 2005):
 ! max export prodution rate: (again, phosphorus units, mol P m-3 s-1)
@@ -188,6 +201,12 @@ IMPLICIT NONE
        flimit = zero
        export = zero
        lim    = 0
+       flimit_p = zero
+       ldoclimit_p = zero
+
+! Initial flags
+       lt_st_ldoc = .TRUE.
+       felim_p = .FALSE.
 
 !! Iron cycle parameters ......... 
 ! Iron external source
@@ -240,6 +259,9 @@ IMPLICIT NONE
        no3M   = no3 / umolkg2molm3
        fetM   = fet / nmolkg2molm3
        ltM    = lt  / nmolkg2molm3
+       ldocM  = ldoc / nmolkg2molm3
+! convert to cells ml-1 for pb
+       pbM    = pb   / cellsml2molm3
        exportM= export * vol * molps2gtcyr
        pstarM = pstar
        pco2M  = pco2ocean / uatm2atm
@@ -263,15 +285,19 @@ IMPLICIT NONE
                repeat('   EXPORT  ',nbox),                             &
                '   P*      ',                                          &
                repeat(' OCPCO2    ',nbox),                             &
-               ' ATPCO2    '
+               ' ATPCO2    ',                                          &
+               repeat('   LDOC    ',nbox),                             &
+               repeat('   PB      ',nbox)                              &
+               repeat('LIG < LDOC ',nbox)                              &
+               repeat('  FELIM    ',nbox)                              &
 
 ! Construct fortran format string
 ! Output the time and nutrient limitation code
            inifmt='1x, i10.1, 1x, i10.0,'
 ! Each variable then is a space and a 10 position float with 5 decimal places
            varfmt='1x, f10.5'
-! This is the number of repeats (10 variables of nbox dimensions plus pstar and atmpco2)
-           write(frep ,'(I4)') 10*nbox+2
+! This is the number of repeats (12 variables of nbox dimensions plus pstar and atmpco2)
+           write(frep ,'(I4)') 12*nbox+2
 ! Combine everything together
 !          fmt='('//trim(fmt)//trim(frep)//'('//trim(varfmt)//'))'
            write(fmt,'(6A)') '(',trim(inifmt),trim(frep),'(',trim(varfmt),'))'
@@ -291,7 +317,12 @@ IMPLICIT NONE
                             exportM,                                   &
                              pstarM,                                   &
                               pco2M,                                   &
-                              pco2A                             
+                              pco2A,                                   &
+                              ldocM,                                   &
+                                pbM,                                   &
+                         lt_st_ldoc,                                   &
+                            felim_p
+
 #endif
 
 ! output to array
@@ -309,6 +340,8 @@ IMPLICIT NONE
        nlout     (outstep) = lim
        psout     (outstep) = pstarM
        atpco2out (outstep) = pco2A
+       ldocout   (outstep,1:nbox) = ldocM
+       pbout     (outstep,1:nbox) = pbM
 ! Increment outstep
        outstep=outstep+1
 
@@ -322,7 +355,9 @@ IMPLICIT NONE
          dpo4dt = TRANSPORT(po4, P, psi, K, dif, invol)  
          dno3dt = TRANSPORT(no3, P, psi, K, dif, invol) 
          dfetdt = TRANSPORT(fet, P, psi, K, dif, invol) 
-         dltdt  = TRANSPORT(lt,  P, psi, K, dif, invol) 
+         dltdt  = TRANSPORT(lt,  P, psi, K, dif, invol)
+         dpbdt  = TRANSPORT(pb,  P, psi, K, dif, invol)
+         dldocdt= TRANSPORT(ldoc,P, psi, K, dif, invol) 
 
          time=nstep*dt / (speryr) 
 
@@ -367,9 +402,18 @@ IMPLICIT NONE
          plimit = po4   / (po4   +  kpo4 ) 
          nlimit = no3   / (no3   +  kno3 ) 
          flimit = fet   / (fet   +   kfe ) 
+! Limitation terms for prokaryotes
+         flimit_p = fet / (fet + kfe_p)
+         ldoclimit_p = ldoc / (ldoc + kldoc_p)
 
 ! -ve export is uptake by phytoplankton, +ve export is net remineralization
        bioP = CALC_PRODUCTION(nlimit, plimit, flimit, ilimit, alpha)
+
+! calculate prokaryotic biomass production
+       pbp = CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
+
+! calculate prokaryotic loss terms
+       pbl = CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
 
        lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
 
@@ -382,22 +426,24 @@ IMPLICIT NONE
 
 ! carbonate flux depends on rain ratio
        carb = export * rCP * rCACO3
-       
-       dpo4dt = dpo4dt + export  
-       dno3dt = dno3dt + export * (rCP/rCN)
-       dfetdt = dfetdt + export * (rCP/rCFe) 
+
+       ! Export term modified by phi and by prokaryotic mortality
+       dpo4dt = dpo4dt + export * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCP
+       dno3dt = dno3dt + export * (rCP/rCN) * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCN 
+       dfetdt = dfetdt + export * (rCP/rCFe) * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCFe
   
 ! For DIC carbonate is the export of 1 mol C (_C_O32-)   
 ! -ve bioP is uptake by phytoplankton, +ve bioP is net remineralization
-       ddicdt = ddicdt + one * carb + export * rCP 
+       ddicdt = ddicdt + one * carb + export * rCP  * (1.0_wp - phi) + (1.0_wp - kappa) * pbl
        
 ! Whereas for ALK carbonate is the export of 2 mol ions (CO3_2-_) 
 !     there is also change in ions due to consumption of nitrate
-       dalkdt = dalkdt + two * carb - export * rNP
+       dalkdt = dalkdt + two * carb - export * rNP * (1.0_wp - phi) - (1.0_wp - kappa) * pbl * 1.0_wp/rCN
 
 ! Dynamic ligand production is based on exudation in the surface layers depending on 
 !   production and release during remineralization in the ocean interior
-       dltdt = dltdt + (abs(export) * gamma_Fe - lambda * lt)
+       dltdt = dltdt + (abs(export) * gamma_Fe - lambda * lt - lt/ldoc * pbp * 1.0_wp/pge)
+       ! Could also add a production term by prokaryotes here (pi term)
 
 ! input of iron (can include (vent source)/fe_sol)
        dfetdt = dfetdt + (fe_sol * fe_depo) / dz 
@@ -408,6 +454,25 @@ IMPLICIT NONE
        feprime=FE_EQUIL(fet, lt, beta)
 
        dfetdt = dfetdt - Kscav*feprime 
+       
+! Uptake and release of Fe by prokaryotes
+       dfetdt = dfetdt + (pbl - pbp) * rFeC_pb
+
+! Change in LDOC
+! Change by prokaryotic uptake (and by mortality, kappa factor)
+       dldocdt = dldocdt - pbp * 1.0_wp/pge + kappa * pbl
+! Release of LDOC during dissolution / remineralization of produced organic matter
+       IF (nbox == 3) THEN
+              dldocdt(3) = dldocdt(3) * export * phi * rCN
+       ELIF (nbox == 6) THEN
+              dldocdt(2:2:6) = dldocdt(2:2:6) * export * phi * rCN
+       ELIF (nbox == 4) THEN
+              dldocdt(4) = dldocdt(4) * export * phi * rCN
+       ENDIF
+       
+
+! Change in prokaryotic biomass is production minus loss
+       dpbdt = dpbdt + pbp - pbl
 
 ! if FeT > LT, then all excess iron is Fe-prime and precipitates out quickly
 ! Liu and Millero indicate very small "soluble" free iron
@@ -446,6 +511,17 @@ IMPLICIT NONE
          
        exportM= (exportM+export*vol*molps2gtcyr)
 
+! Set flags according to calculated values
+       IF (lt < ldoc) THEN
+          lt_st_ldoc = .TRUE.
+       ELSE
+          lt_st_ldoc = .FALSE.
+       ENDIF
+
+       IF (felim_p < ldoclimit_p) THEN
+          felim_p = .TRUE.
+       ELSE
+          felim_p = .FALSE.
 
 ! if an output time, write some output to screen and file
        if (mod(time,outputyears) .eq. 0)then
@@ -480,7 +556,11 @@ IMPLICIT NONE
                           -exportM,                                    &
                             pstarM,                                    &
                              pco2M,                                    &
-                             pco2A
+                             pco2A,                                    &
+                             ldocM,                                    &
+                               pbM,                                    &
+                        lt_st_ldoc,                                    &
+                           felim_p
 #endif
        
 ! output to array
@@ -758,6 +838,49 @@ INTEGER                             :: i
        NUTRIENT_LIMIT_CODE = limout
        RETURN
        END FUNCTION NUTRIENT_LIMIT_CODE
+!=======================================================================
+
+!=======================================================================
+! Calculate prokaryotic biomass production
+       CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
+
+       USE MOD_BOXES
+
+       IMPLICIT NONE
+       REAL(KIND=wp), DIMENSION(nbox):: CALC_PROKARYOTE_PRODUCTION
+
+       REAL(KIND=wp), intent(in)                  :: mu0
+       REAL(KIND=wp), intent(in) , DIMENSION(nbox):: ldoclimit_p
+       REAL(KIND=wp), intent(in) , DIMENSION(nbox):: flimit_p
+       REAL(KIND=wp), intent(in) , DIMENSION(nbox):: pb
+
+       CALC_PROKARYOTE_PRODUCTION = mu0 * pb * minval( &
+                      RESHAPE([ ldoclimit_p, flimit_p ], [ nbox, 3 ]), 2)
+
+       RETURN
+       END FUNCTION CALC_PROKARYOTE_PRODUCTION
+
+!=======================================================================
+
+!=======================================================================
+! Calculate prokaryotic loss term
+       CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
+
+       USE MOD_BOXES
+
+       IMPLICIT NONE
+       REAL(KIND=wp), DIMENSION(nbox):: CALC_PROKARYOTIC_LOSS
+
+       REAL(KIND=wp), intent(in)                  :: m_l
+       REAL(KIND=wp), intent(in)                  :: m_q
+       REAL(KIND=wp), intent(in) , DIMENSION(nbox):: pb
+
+       CALC_PROKARYOTIC_LOSS = m_l * pb + m_q * pb * pb
+
+       RETURN
+       END FUNCTION CALC_PROKARYOTIC_LOSS
+
+
 !=======================================================================
 
       END MODULE MOD_MODELMAIN

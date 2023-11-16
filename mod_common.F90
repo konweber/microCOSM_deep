@@ -11,6 +11,9 @@ REAL(KIND=wp), PARAMETER :: dt           = 86400._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
+! carbon quota per cell of prokaryotic biomass (g C cell-1)
+REAL(KIND=wp), PARAMETER :: qc_prokar    = 1.e-11_wp
+REAL(KIND=wp), PARAMETER :: weight_c     = 12._wp
 
 ! Conversion factors
 REAL(KIND=wp), PARAMETER :: conv_molkg_molm3 = 1024.5_wp 
@@ -20,7 +23,9 @@ REAL(KIND=wp), PARAMETER :: permil       = 1._wp/conv_molkg_molm3
 REAL(KIND=wp), PARAMETER :: umolkg2molm3 = conv_molkg_molm3 * 1.e-6_wp 
 REAL(KIND=wp), PARAMETER :: nmolkg2molm3 = conv_molkg_molm3 * 1.e-9_wp 
 REAL(KIND=wp), PARAMETER :: uatm2atm     = 1.e-6_wp 
-REAL(KIND=wp), PARAMETER :: molps2gtcyr  = 106._wp * 12._wp * speryr * 1.e-15_wp 
+REAL(KIND=wp), PARAMETER :: molps2gtcyr  = 106._wp * 12._wp * speryr * 1.e-15_wp
+! NEED TO ADD CONVERSION FACTOR BETWEEN PROKARYOTIC BIOMASS AND ABUNDANCE
+REAL(KIND=wp), PARAMETER :: cellsml2molm3 = qc_prokar/weight_c * 1.e6_wp
 
 REAL(KIND=wp) :: zero, one, two, three, four, five,                      &
                     six, seven, eight, nine
@@ -41,7 +46,7 @@ REAL(KIND=wp)                  :: pstar
 ! some arrays for average accumulators
 REAL(KIND=wp), DIMENSION(nbox) :: thetaM, saltM, exportM, pco2M,          &
                                   dicM, alkM, po4M, no3M, fetM, ltM, sitM 
-! Addition of LDOC and prokaryotic biomass, necessary?
+! Addition of LDOC and prokaryotic biomass
 REAL(KIND=wp), DIMENSION(nbox) :: ldocM, pbM                                  
 REAL(KIND=wp)                  :: timeM, pco2A, pstarM
 
@@ -77,14 +82,17 @@ REAL(KIND=wp), DIMENSION(nbox) :: dlambdadz, lambda
 REAL(KIND=wp)                  :: kfe, kpo4, kno3, klight
 ! Additon of half saturation constant for prokaryotic species
 REAL(KIND=wp)                  :: kfe_p, kldoc_p
+REAL(KIND=wp)                  :: phi ! The fraction of the total remineralized carbon that yields LDOC
 REAL(KIND=wp), DIMENSION(nbox) :: export
 REAL(KIND=wp)                  :: alpha 
 REAL(KIND=wp), DIMENSION(nbox) :: light, ilimit, plimit, nlimit, flimit
+! Addition of limitation codes for prokaryotic species
+REAL(KIND=wp), DIMENSION(nbox) :: flimit_p, ldoclimit_p
 ! nutrient limitation codes
 INTEGER                        :: lim
 
 ! prokaryotic parameters
-REAL(KIND=wp)                  :: rFeC_pb, m_l, m_q, kappa, mu0, cue
+REAL(KIND=wp)                  :: rFeC_pb, m_l, m_q, kappa, mu0, pge
 
 CONTAINS
 
@@ -124,7 +132,7 @@ IMPLICIT NONE
    klight = 30._wp
 
 ! Iron cycle parameters 
-   weight_fe = 56._wp  
+   weight_fe = 56._wp
 !solubility of iron:
    fe_sol = 0.0025_wp
 ! conditional stability FeL: (mol kg-1)-1
@@ -135,6 +143,25 @@ IMPLICIT NONE
    relaxfe = 0.01_wp * speryr  
 ! DIC gas exchange piston velocity coefficient
    Kwexch_av = 0.337_wp
+
+! Prokaryotic parameters
+! Prokaryotic biomass carbon to iron ratio
+   rFeC_pb = 40._wp * 1.e-6_wp
+! Prokaryotic maximum growth rate
+   mu0 = 1_wp/sperd ! in units of s-1
+! Prokaryotic linear mortality rate
+   m_l = ! in units of s-1
+! Prokaryotic quadratic mortality rate
+   m_q = ! since pb is in molC per m3, this is in units of m3 per molC per s
+! fraction of dead prokaryotic biomass that released as LDOC
+   kappa = 0.0_wp
+! Prokaryotic half saturation constant for iron
+   kfe_p = 1e-9_wp*conv_molkg_molm3
+! Prokaryotic half saturation constant for LDOC
+   kldoc_p =  1e-6_wp*conv_molkg_molm3
+! Prokaryotic growth efficiency
+   pge = 0.15_wp
+
    
 RETURN
 END SUBROUTINE COMMON_ASSIGNMENTS
