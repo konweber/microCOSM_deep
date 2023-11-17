@@ -475,7 +475,7 @@
             dif_in,                                                    &    
             alpha_yr,                                                  &
             gamma_in,                                                  &
-!            lt_lifein,                                                 &
+            lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &

@@ -35,7 +35,7 @@ IMPLICIT NONE
             dif_in,                                                    &    
             alpha_yr,                                                  &
             gamma_in,                                                  &
-!            lt_lifein,                                                 &
+            lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
@@ -49,6 +49,7 @@ IMPLICIT NONE
             fein,                                                      &
             ltin,                                                      &
             atpco2in,                                                  &
+            eratio_in,                                                 &
             pbin,                                                      &
             ldocin,                                                    &
             tout,                                                      &            
@@ -99,6 +100,7 @@ IMPLICIT NONE
             dldz_in,                                                   &
             wind_in,                                                   &
             foin,                                                      &
+            eratio_in,                                                 &
             pbin,                                                      &
             ldocin
 
@@ -166,13 +168,14 @@ IMPLICIT NONE
        pb = pbin * cellsml2molm3
 
 ! More config/forcing variables
-       K   = Kin
-       R   = Rin
-       P   = Pin
-       psi = psi_in  
-       dif = dif_in
-       wind= wind_in
-       fopen=foin
+       K     = Kin
+       R     = Rin
+       P     = Pin
+       psi   = psi_in  
+       dif   = dif_in
+       wind  = wind_in
+       fopen = foin
+       eratio= eratio_in
 
 ! initialize tracer rates of change
 ! temp, salt, and si are passive for now, just for co2 solubility
@@ -204,7 +207,7 @@ IMPLICIT NONE
        flimit_p = zero
        ldoclimit_p = zero
 
-! Initial flags
+! Initial flags for ligand / LDOC ratio and prokaryotic Fe limitation
        lt_st_ldoc = .TRUE.
        felim_p = .FALSE.
 
@@ -415,6 +418,9 @@ IMPLICIT NONE
 ! calculate prokaryotic loss terms
        pbl = CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
 
+! Nutrient addition through prokaryotic mortality (carbon units)
+       cadd_pbl = pbl * (1.0_wp - kappa)
+
        lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
 
 ! scale rate of nutrient export with rate of phosphorus export
@@ -422,23 +428,34 @@ IMPLICIT NONE
 ! Spread broadcasts export and volume arrays to matrices
 ! Each is volume weighted (technically for a single box, this is not necessary,
 !    but it works for accumulation of several boxes too.)
-        export = CALC_EXPORT(R, bioP, vol, invol)
+       export = CALC_EXPORT(R, bioP, vol, invol)
+
+! Calculation of the nutrients that are added to the LDOC pool (in P units)
+! LDOC is assumed to be produced in the surface and in the deep boxes
+! There is an additional term to account for the total biomass production
+! The e-ratio is set to 1 for the deep boxes
+! Constant factor phi gives the fraction of the produced biomass that forms LDOC
+       ldocP = phi * bioP/eratio
 
 ! carbonate flux depends on rain ratio
+! Assumed to be unaffected by LDOC and prokaryotes
        carb = export * rCP * rCACO3
 
-       ! Export term modified by phi and by prokaryotic mortality
-       dpo4dt = dpo4dt + export * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCP
-       dno3dt = dno3dt + export * (rCP/rCN) * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCN 
-       dfetdt = dfetdt + export * (rCP/rCFe) * (1.0_wp - phi) + (1.0_wp - kappa) * pbl * 1.0_wp/rCFe
+       ! Export term modified by LDOC pool and by prokaryotic mortality
+       dpo4dt = dpo4dt + export - ldocP + cadd_pbl * 1.0_wp/rCP
+       dno3dt = dno3dt + export * (rCP/rCN) - ldocP * (rCP/rCN) + cadd_pbl * 1.0_wp/rCN
+
+       ! LDOC itself is assumed to contain no Fe, so there are no additional modifications
+       ! here in constrast to the other nutrient equations
+       dfetdt = dfetdt + export * (rCP/rCFe)
   
 ! For DIC carbonate is the export of 1 mol C (_C_O32-)   
 ! -ve bioP is uptake by phytoplankton, +ve bioP is net remineralization
-       ddicdt = ddicdt + one * carb + export * rCP  * (1.0_wp - phi) + (1.0_wp - kappa) * pbl
+       ddicdt = ddicdt + one * carb + export * rCP - ldocP * rCP + cadd_pbl
        
 ! Whereas for ALK carbonate is the export of 2 mol ions (CO3_2-_) 
 !     there is also change in ions due to consumption of nitrate
-       dalkdt = dalkdt + two * carb - export * rNP * (1.0_wp - phi) - (1.0_wp - kappa) * pbl * 1.0_wp/rCN
+       dalkdt = dalkdt + two * carb - export * rNP + ldocP * rNP - cadd_pbl * 1.0_wp/rCN
 
 ! Dynamic ligand production is based on exudation in the surface layers depending on 
 !   production and release during remineralization in the ocean interior
@@ -459,16 +476,10 @@ IMPLICIT NONE
        dfetdt = dfetdt + (pbl - pbp) * rFeC_pb
 
 ! Change in LDOC
+! Production through biomass production in surface ocean
+! In deep ocean release from sinking matter (that is otherwise remineralized)
 ! Change by prokaryotic uptake (and by mortality, kappa factor)
-       dldocdt = dldocdt - pbp * 1.0_wp/pge + kappa * pbl
-! Release of LDOC during dissolution / remineralization of produced organic matter
-       IF (nbox == 3) THEN
-              dldocdt(3) = dldocdt(3) * export * phi * rCN
-       ELIF (nbox == 6) THEN
-              dldocdt(2:2:6) = dldocdt(2:2:6) * export * phi * rCN
-       ELIF (nbox == 4) THEN
-              dldocdt(4) = dldocdt(4) * export * phi * rCN
-       ENDIF
+       dldocdt = dldocdt + ldocP * rCP + kappa * pbp - pbp/pge
        
 
 ! Change in prokaryotic biomass is production minus loss
@@ -489,6 +500,8 @@ IMPLICIT NONE
        no3   = no3   + dno3dt   * dt         
        fet   = fet   + dfetdt   * dt 
        lt    = lt    + dltdt    * dt 
+       ldoc  = ldoc  + dldocdt  * dt
+       pb    = pb    + dpbdt    * dt
 
 ! evaluate pstar
        pstar  = MAX(calc_pstar(po4), calc_pstar(no3)) 
@@ -508,6 +521,8 @@ IMPLICIT NONE
        pstarM = (pstarM + pstar             )
        pco2M  = (pco2M+ pco2ocean / uatm2atm)
        pco2A  = (pco2A+ pco2atmos / uatm2atm)
+       ldocM  = (ldocM+ ldoc / nmolkg2molm3 )
+       pbM    = (pbM  + pb   / cellsml2molm3)
          
        exportM= (exportM+export*vol*molps2gtcyr)
 
@@ -539,6 +554,8 @@ IMPLICIT NONE
          pstarM = pstarM /(outputyears*speryr/dt)
          pco2M  = pco2M  /(outputyears*speryr/dt)
          pco2A  = pco2A  /(outputyears*speryr/dt)
+         ldocM  = ldocM  /(outputyears*speryr/dt)
+         pbM    = pbM    /(outputyears*speryr/dt)
          
          exportM= exportM/(outputyears*speryr/dt)
 #if defined(WRITEOUTFILE)           
@@ -578,6 +595,8 @@ IMPLICIT NONE
        nlout     (outstep) = lim
        psout     (outstep) = pstarM
        atpco2out (outstep) = pco2A
+       ldocout   (outstep,1:nbox) = ldocM
+       pbout     (outstep,1:nbox) = pbM
 
 ! Reset the average accumulators
        timeM  = 0._wp
@@ -593,6 +612,8 @@ IMPLICIT NONE
        pstarM = 0._wp
        pco2M  = 0._wp
        pco2A  = 0._wp
+       ldocM  = 0._wp
+       pbM    = 0._wp
          
        exportM= 0._wp
 
