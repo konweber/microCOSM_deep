@@ -61,6 +61,7 @@
             dldz_in,                                                   &
             wind_in,                                                   &
             fopen_in,                                                  &
+            eratio_in,                                                 &
             pbin,                                                      &
             ldocin
 
@@ -93,10 +94,10 @@
             nlout
 
 ! Logical arrays (nbox, by timestep dimensionesix)
-! l_st_ldoc is true if the ligand concentration is lower than the LDOC concentration (this condition must be fulfilled)
+! lt_st_ldoc is true if the ligand concentration is lower than the LDOC concentration (this condition must be fulfilled)
 ! felim_p is true if the iron concentration is limiting for the prokaryotic growth
-       LOGICAL, dimension(:,:), allocatable ::                         &
-            l_st_ldoc,                                                 &
+       LOGICAL, dimension(:,:), allocatable ::                          &
+            lt_st_ldoc,                                                 &
             felim_p
 
        ! Input some initial parameters
@@ -121,7 +122,7 @@
        allocate ( pco2out   (outstepmax,nbox) )
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
-       allocate ( l_st_ldoc (outstepmax,nbox) )
+       allocate ( lt_st_ldoc (outstepmax,nbox) )
        allocate ( felim_p   (outstepmax,nbox) )
 
 ! Initialize input arguements
@@ -136,8 +137,8 @@
        fein     =      0._wp
        liin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      0._wp
-       ldocin   =      0._wp
+       pbin     =      1.e5._wp ! in cells ml-1
+       ldocin   =      2._wp ! in nmol kg-1
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -171,6 +172,9 @@
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
        dldz_in       =   0._wp
+
+! Export ratio (export production / total production)
+       eratio_in    = 0._wp
 
 ! File number identifier
        id            = 1
@@ -264,7 +268,14 @@
        
 ! Open surface fraction in contact with atmoshpere 
 !  1 => fully open, <1 => flux impeded (e.g. by sea ice)
-       fopen_in(1:6)= [ 1._wp, 0._wp, 1._wp, 0._wp, 1._wp, 0._wp ]       
+       fopen_in(1:6)= [ 1._wp, 0._wp, 1._wp, 0._wp, 1._wp, 0._wp ]
+
+! Export ratio is smaller than 1 for the surface boxes
+! Export ratio is 1 for the deep boxes
+       eratio_in(1:6)= [ 0.1_wp, 1._wp, 0.1_wp, 1._wp, 0.1_wp, 1._wp ]
+! ==============================================================================
+! Surface values need ajustment !!!
+! ==============================================================================       
        
 ! Dust deposition in g Fe m-2 year-1
 ! Hydrothermal vent input of 1 Gmol/yr (Tagliabue et al., 2010)
@@ -348,7 +359,11 @@
        
 ! Open surface fraction in contact with atmoshpere 
 !  1 => fully open, <1 => flux impeded (e.g. by sea ice)
-       fopen_in(1:4)= [ 0.5_wp, 1._wp, 1._wp, 0._wp ]       
+       fopen_in(1:4)= [ 0.5_wp, 1._wp, 1._wp, 0._wp ]
+
+! Export ratio is smaller than 1 for the surface boxes
+! Export ratio is 1 for the deep boxes
+       eratio_in(1:4)= [ 0.25_wp, 1._wp, 1._wp, 0.1_wp ]       
        
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:4)= [ 1.5e-3_wp, 1.5e-3_wp, 1.5e-1_wp,               &
@@ -360,7 +375,7 @@
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
 ! Modification: first order loss in the deep is set to 0
-       dldz_in(1:4)  = [ 1._wp, 1._wp, 1._wp, 1.e-2_wp ]
+       dldz_in(1:4)  = [ 1._wp, 1._wp, 1._wp, 0._wp ]
 #else
 
 ! Default to the three box model
@@ -427,6 +442,10 @@
 !  1 => fully open, <1 => flux impeded (e.g. by sea ice)
        fopen_in(1:3)= [ 1._wp, 1._wp, 0._wp ]
 
+! Export ratio is smaller than 1 for the surface boxes
+! Export ratio is 1 for the deep boxes
+       eratio_in(1:3)= [ 0.25_wp, 0.1_wp, 1._wp ]   
+
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:3)= [ 1.5e-3_wp, 1.5e-1_wp,                          &
 ! Hydrothermal vent input of 1 Gmol/yr (Tagliabue et al., 2010)
@@ -470,6 +489,7 @@
             fein,                                                      &
             ltin,                                                      &
             atpco2in,                                                  &
+            eratio_in,                                                 &
             pbin,                                                      &
             ldocin,                                                    &
             tout,                                                      &            
@@ -488,7 +508,7 @@
             atpco2out,                                                 &
             pbout,                                                     &
             ldocout                                                    &
-            l_st_ldoc,                                                 &
+            lt_st_ldoc,                                                 &
             felim_p   
             )
 
