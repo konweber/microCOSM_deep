@@ -83,7 +83,7 @@ REAL(KIND=wp)                  :: kfe, kpo4, kno3, klight
 ! Additon of half saturation constant for prokaryotic species
 REAL(KIND=wp)                  :: kfe_p, kldoc_p
 REAL(KIND=wp)                  :: phi ! The fraction of the total remineralized carbon that yields LDOC
-REAL(KIND=wp), DIMENSION(nbox) :: export
+REAL(KIND=wp), DIMENSION(nbox) :: export, eratio
 REAL(KIND=wp)                  :: alpha 
 REAL(KIND=wp), DIMENSION(nbox) :: light, ilimit, plimit, nlimit, flimit
 ! Addition of limitation codes for prokaryotic species
@@ -161,6 +161,9 @@ IMPLICIT NONE
    kldoc_p =  1e-6_wp*conv_molkg_molm3
 ! Prokaryotic growth efficiency
    pge = 0.15_wp
+
+! LDOC parameters
+   phi = 0.1_wp
 
    
 RETURN
