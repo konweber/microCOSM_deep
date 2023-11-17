@@ -272,7 +272,7 @@ IMPLICIT NONE
        
 #if defined(WRITEOUTFILE)    
 ! open an output file and write initial values to file
-          write (filename, '(a,I0.6,a)') 'microCOSM_'    ,id,'_output.dat'
+          write (filename, '(a,I0.6,a)') 'microCOSM_deep_'    ,id,'_output.dat'
           open(14,file=filename,status='unknown')
 
 ! write column header output 
