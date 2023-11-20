@@ -12,7 +12,7 @@ REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
 ! carbon quota per cell of prokaryotic biomass (g C cell-1)
-REAL(KIND=wp), PARAMETER :: qc_prokar    = 1.e-11_wp
+REAL(KIND=wp), PARAMETER :: qc_prokar    = 1.0e-11_wp
 REAL(KIND=wp), PARAMETER :: weight_c     = 12._wp
 
 ! Conversion factors
@@ -25,7 +25,7 @@ REAL(KIND=wp), PARAMETER :: nmolkg2molm3 = conv_molkg_molm3 * 1.e-9_wp
 REAL(KIND=wp), PARAMETER :: uatm2atm     = 1.e-6_wp 
 REAL(KIND=wp), PARAMETER :: molps2gtcyr  = 106._wp * 12._wp * speryr * 1.e-15_wp
 ! NEED TO ADD CONVERSION FACTOR BETWEEN PROKARYOTIC BIOMASS AND ABUNDANCE
-REAL(KIND=wp), PARAMETER :: cellsml2molm3 = qc_prokar/weight_c * 1.e6_wp
+REAL(KIND=wp), PARAMETER :: cellsmuL2molm3 = qc_prokar/weight_c * 1.e9_wp
 
 REAL(KIND=wp) :: zero, one, two, three, four, five,                      &
                     six, seven, eight, nine
@@ -93,6 +93,7 @@ INTEGER                        :: lim
 
 ! prokaryotic parameters
 REAL(KIND=wp)                  :: rFeC_pb, m_l, m_q, kappa, mu0, pge
+REAL(KIND=wp), DIMENSION(nbox) :: pbp, pbl, ldocP, cadd_pbl
 
 CONTAINS
 
@@ -147,12 +148,11 @@ IMPLICIT NONE
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
    rFeC_pb = 40._wp * 1.e-6_wp
-! Prokaryotic maximum growth rate
    mu0 = 1_wp/sperd ! in units of s-1
 ! Prokaryotic linear mortality rate
-   m_l = ! in units of s-1
+   m_l = 1.0e-8_wp ! in units of s-1
 ! Prokaryotic quadratic mortality rate
-   m_q = ! since pb is in molC per m3, this is in units of m3 per molC per s
+   m_q = 0.0_wp ! since pb is in molC per m3, this is in units of m3 per molC per s
 ! fraction of dead prokaryotic biomass that released as LDOC
    kappa = 0.0_wp
 ! Prokaryotic half saturation constant for iron

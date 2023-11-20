@@ -39,7 +39,7 @@ IMPLICIT NONE
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
-            foin,                                                      &
+            fopen_in,                                                  &
             thin,                                                      &
             sain,                                                      &
             cain,                                                      &
@@ -67,10 +67,11 @@ IMPLICIT NONE
             ocpco2out,                                                 &
             atpco2out,                                                 &
             pbout,                                                     &
-            ldocout                                                    &
-            lt_st_ldoc,                                                 &
-            felim_p                                                            
-            )
+            ldocout,                                                   &
+            lt_st_ldoc,                                                &
+            felim_p                                                    &
+            )                                                           
+            
 
 !-----------------------------------------------------------------------         
 ! input arguments   
@@ -99,7 +100,7 @@ IMPLICIT NONE
             fe_input,                                                  &
             dldz_in,                                                   &
             wind_in,                                                   &
-            foin,                                                      &
+            fopen_in,                                                  &
             eratio_in,                                                 &
             pbin,                                                      &
             ldocin
@@ -130,7 +131,7 @@ IMPLICIT NONE
             nlout
 
        LOGICAL, intent(out), dimension (outstepmax,nbox) ::            &
-            lt_st_ldoc,                                                 &
+            lt_st_ldoc,                                                &
             felim_p                                                     
 
 ! local variables
@@ -165,7 +166,7 @@ IMPLICIT NONE
        sit = phin * umolkg2molm3 * rSIP
        ! Modification: addition of the 2 new input variables
        ldoc = ldocin * nmolkg2molm3
-       pb = pbin * cellsml2molm3
+       pb = pbin * cellsmuL2molm3
 
 ! More config/forcing variables
        K     = Kin
@@ -174,7 +175,7 @@ IMPLICIT NONE
        psi   = psi_in  
        dif   = dif_in
        wind  = wind_in
-       fopen = foin
+       fopen = fopen_in
        eratio= eratio_in
 
 ! initialize tracer rates of change
@@ -208,8 +209,8 @@ IMPLICIT NONE
        ldoclimit_p = zero
 
 ! Initial flags for ligand / LDOC ratio and prokaryotic Fe limitation
-       lt_st_ldoc = .TRUE.
-       felim_p = .FALSE.
+       lt_st_ldoc(1, :) = lt < ldoc
+       felim_p(1, :) = flimit_p < ldoclimit_p
 
 !! Iron cycle parameters ......... 
 ! Iron external source
@@ -263,8 +264,8 @@ IMPLICIT NONE
        fetM   = fet / nmolkg2molm3
        ltM    = lt  / nmolkg2molm3
        ldocM  = ldoc / nmolkg2molm3
-! convert to cells ml-1 for pb
-       pbM    = pb   / cellsml2molm3
+! convert to cells µL-1 for pb
+       pbM    = pb   / cellsmuL2molm3
        exportM= export * vol * molps2gtcyr
        pstarM = pstar
        pco2M  = pco2ocean / uatm2atm
@@ -290,9 +291,9 @@ IMPLICIT NONE
                repeat(' OCPCO2    ',nbox),                             &
                ' ATPCO2    ',                                          &
                repeat('   LDOC    ',nbox),                             &
-               repeat('   PB      ',nbox)                              &
-               repeat('LIG < LDOC ',nbox)                              &
-               repeat('  FELIM    ',nbox)                              &
+               repeat('   PB      ',nbox)                              
+!               repeat('LIG < LDOC ',nbox)                              &
+!               repeat('  FELIM    ',nbox)                              &
 
 ! Construct fortran format string
 ! Output the time and nutrient limitation code
@@ -322,9 +323,9 @@ IMPLICIT NONE
                               pco2M,                                   &
                               pco2A,                                   &
                               ldocM,                                   &
-                                pbM,                                   &
-                         lt_st_ldoc,                                   &
-                            felim_p
+                                pbM                                    
+!                         lt_st_ldoc,                                   &
+!                            felim_p
 
 #endif
 
@@ -522,21 +523,14 @@ IMPLICIT NONE
        pco2M  = (pco2M+ pco2ocean / uatm2atm)
        pco2A  = (pco2A+ pco2atmos / uatm2atm)
        ldocM  = (ldocM+ ldoc / nmolkg2molm3 )
-       pbM    = (pbM  + pb   / cellsml2molm3)
+       pbM    = (pbM  + pb   / cellsmuL2molm3)
          
        exportM= (exportM+export*vol*molps2gtcyr)
 
 ! Set flags according to calculated values
-       IF (lt < ldoc) THEN
-          lt_st_ldoc = .TRUE.
-       ELSE
-          lt_st_ldoc = .FALSE.
-       ENDIF
+       lt_st_ldoc(outstep, :) = lt < ldoc
 
-       IF (felim_p < ldoclimit_p) THEN
-          felim_p = .TRUE.
-       ELSE
-          felim_p = .FALSE.
+       felim_p(outstep, :) = flimit_p < ldoclimit_p
 
 ! if an output time, write some output to screen and file
        if (mod(time,outputyears) .eq. 0)then
@@ -575,9 +569,9 @@ IMPLICIT NONE
                              pco2M,                                    &
                              pco2A,                                    &
                              ldocM,                                    &
-                               pbM,                                    &
-                        lt_st_ldoc,                                    &
-                           felim_p
+                               pbM                                     
+!                         lt_st_ldoc,                                   &
+!                           felim_p
 #endif
        
 ! output to array
@@ -863,8 +857,7 @@ INTEGER                             :: i
 
 !=======================================================================
 ! Calculate prokaryotic biomass production
-       CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
-
+       FUNCTION CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
        USE MOD_BOXES
 
        IMPLICIT NONE
@@ -876,7 +869,7 @@ INTEGER                             :: i
        REAL(KIND=wp), intent(in) , DIMENSION(nbox):: pb
 
        CALC_PROKARYOTE_PRODUCTION = mu0 * pb * minval( &
-                      RESHAPE([ ldoclimit_p, flimit_p ], [ nbox, 3 ]), 2)
+                      RESHAPE([ ldoclimit_p, flimit_p ], [ nbox, 2 ]), 2)
 
        RETURN
        END FUNCTION CALC_PROKARYOTE_PRODUCTION
@@ -885,8 +878,7 @@ INTEGER                             :: i
 
 !=======================================================================
 ! Calculate prokaryotic loss term
-       CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
-
+       FUNCTION CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
        USE MOD_BOXES
 
        IMPLICIT NONE

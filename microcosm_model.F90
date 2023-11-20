@@ -56,7 +56,7 @@
             phin,                                                      & 
             niin,                                                      & 
             fein,                                                      & 
-            liin,                                                      & 
+            ltin,                                                      & 
             fe_input,                                                  &
             dldz_in,                                                   &
             wind_in,                                                   &
@@ -81,7 +81,7 @@
             fout,                                                      &
             lout,                                                      &
             expout,                                                    &
-            pco2out,                                                   &
+            ocpco2out,                                                   &
             pbout,                                                     &
             ldocout                                                  
             
@@ -98,7 +98,7 @@
 ! felim_p is true if the iron concentration is limiting for the prokaryotic growth
        LOGICAL, dimension(:,:), allocatable ::                          &
             lt_st_ldoc,                                                 &
-            felim_p
+            felim_p                                                     
 
        ! Input some initial parameters
        maxyears   = 1.e4_wp
@@ -119,7 +119,7 @@
        allocate ( fout      (outstepmax,nbox) )
        allocate ( lout      (outstepmax,nbox) )
        allocate ( expout    (outstepmax,nbox) )
-       allocate ( pco2out   (outstepmax,nbox) )
+       allocate ( ocpco2out   (outstepmax,nbox) )
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
        allocate ( lt_st_ldoc (outstepmax,nbox) )
@@ -135,9 +135,9 @@
 !       niin     =     16._wp
        niin     =     36._wp
        fein     =      0._wp
-       liin     =      2._wp
+       ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      1.e5._wp ! in cells ml-1
+       pbin     =      1.e2_wp ! in cells µL-1
        ldocin   =      2._wp ! in nmol kg-1
        
 ! Overturning and mixing rates (m3/s)
@@ -433,7 +433,7 @@
 !       phin(1:3)= [ 1.85304_wp   , 0.31325_wp   , 2.49804_wp    ]
 !       niin(1:3)= [ 24.68043_wp  , 0.04392_wp   , 35.00046_wp   ]
 !       fein(1:3)= [ 0.01007_wp   , 0.37382_wp   , 0.55782_wp    ]
-!       liin(1:3)= [ 1.62217_wp   , 1.58451_wp   , 1.57992_wp    ]
+!       ltin(1:3)= [ 1.62217_wp   , 1.58451_wp   , 1.57992_wp    ]
 
 ! Wind speed (m/s)for CO2 gas fluxes
        wind_in(1:3) = [ 10._wp, 5._wp, 0._wp ]
@@ -479,7 +479,7 @@
             dldz_in,                                                   &
             fe_input,                                                  &
             wind_in,                                                   &
-            foin,                                                      &
+            fopen_in,                                                  &
             thin,                                                      &
             sain,                                                      &
             cain,                                                      &
@@ -507,9 +507,9 @@
             ocpco2out,                                                 &
             atpco2out,                                                 &
             pbout,                                                     &
-            ldocout                                                    &
-            lt_st_ldoc,                                                 &
-            felim_p   
+            ldocout,                                                   &
+            lt_st_ldoc,                                                &
+            felim_p                                                    &
             )
 
 !=======================================================================
