@@ -271,7 +271,7 @@ IMPLICIT NONE
        pco2M  = pco2ocean / uatm2atm
        pco2A  = pco2atmos / uatm2atm
        
-#if defined(WRITEOUTFILE)    
+#if defined(WRITEOUTFILE)   
 ! open an output file and write initial values to file
           write (filename, '(a,I0.6,a)') 'microCOSM_deep_'    ,id,'_output.dat'
           open(14,file=filename,status='unknown')
@@ -326,6 +326,75 @@ IMPLICIT NONE
                                 pbM                                    
 !                         lt_st_ldoc,                                   &
 !                            felim_p
+
+! Also write parameters into a separate text file
+       write (filename, '(a,I0.6,a)') 'microCOSM_deep_'    ,id,'_parameters.dat'
+       open(15,file=filename,status='unknown')
+       write(15,*) 'maxyears', maxyears
+       write(15,*) 'outputyears', outputyears
+       write(15,*) 'outstepmax', outstepmax
+       write(15,*) 'dt', dt
+       write(15,*) 'nstepmax', nstepmax
+       write(15,*) 'mu0', mu0
+       write(15,*) 'kldoc_p', kldoc_p
+       write(15,*) 'kfe_p', kfe_p
+       write(15,*) 'm_l', m_l
+       write(15,*) 'm_q', m_q
+       write(15,*) 'pge', pge
+       write(15,*) 'phi', phi
+       write(15,*) 'qc_prokar', qc_prokar
+       write(15,*) 'weight_c', weight_c
+       write(15,*) 'kappa', kappa
+       write(15,*) 'weight_fe', weight_fe
+       write(15,*) 'fe_sol', fe_sol
+       write(15,*) 'Kscav', Kscav
+       write(15,*) 'relaxfe', relaxfe
+       write(15,*) 'beta', beta
+       !write(15,*) 'Kwexch_avg', Kwexch_avg
+       write(15,*) 'dx', dx
+       write(15,*) 'dy', dy
+       write(15,*) 'dz', dz
+       write(15,*) 'depth', depth
+       write(15,*) 'latitude', latitude
+       write(15,*) 'Kin', Kin
+       write(15,*) 'Rin', Rin
+       write(15,*) 'Pin', Pin
+       write(15,*) 'psi_in', psi_in
+       write(15,*) 'dif_in', dif_in
+       write(15,*) 'alpha_yr', alpha_yr
+       write(15,*) 'gamma_in', gamma_in
+       write(15,*) 'lt_lifein', lt_lifein
+       write(15,*) 'dldz_in', dldz_in
+       write(15,*) 'fe_input', fe_input
+       write(15,*) 'wind_in', wind_in
+       write(15,*) 'fopen_in', fopen_in
+       write(15,*) 'thin', thin
+       write(15,*) 'sain', sain
+       write(15,*) 'cain', cain
+       write(15,*) 'alin', alin
+       write(15,*) 'phin', phin
+       write(15,*) 'niin', niin
+       write(15,*) 'fein', fein
+       write(15,*) 'ltin', ltin
+       write(15,*) 'atpco2in', atpco2in
+       write(15,*) 'eratio_in', eratio_in
+       write(15,*) 'pbin', pbin
+       write(15,*) 'ldocin', ldocin
+       write(15,*) 'ph', ph
+       write(15,*) 'klight', klight
+       write(15,*) 'kpo4', kpo4
+       write(15,*) 'kno3', kno3
+       write(15,*) 'kfe', kfe
+       write(15,*) 'rCP', rCP
+       write(15,*) 'rNP', rNP
+       write(15,*) 'rCFe', rCFe
+       write(15,*) 'rSIP', rSIP
+       write(15,*) 'rCACO3', rCACO3
+       write(15,*) 'rFeC_pb', rFeC_pb
+       write(15,*) 'rCN', rCN
+       write(15,*) 'rCFe', rCFe
+
+       close(15)
 
 #endif
 
