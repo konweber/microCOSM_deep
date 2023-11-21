@@ -7,7 +7,7 @@ IMPLICIT NONE
 
 ! timestepping variables
 INTEGER                  :: nstepmax
-REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 24._wp
+REAL(KIND=wp), PARAMETER :: dt           = 86400._wp !/ 24._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
@@ -75,8 +75,8 @@ REAL(KIND=wp)                  :: weight_fe, fe_sol, beta, Kscav, relaxfe
 ! iron input rate
 REAL(KIND=wp), DIMENSION(nbox) :: fe_depo, fe_pptmask
 ! Dynamic Ligand variables
-REAL(KIND=wp)                  :: gamma_Fe, lt_lifetime
-REAL(KIND=wp), DIMENSION(nbox) :: dlambdadz, lambda 
+REAL(KIND=wp)                  :: gamma_lt, lt_lifetime, ligphi
+REAL(KIND=wp), DIMENSION(nbox) :: dlambdadz, lambda, ligP
 
 ! export related
 ! half saturation constants 
@@ -149,22 +149,22 @@ IMPLICIT NONE
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
    rFeC_pb = 40._wp * 1.e-6_wp
-   mu0 = 0.1_wp/sperd ! in units of s-1
+   mu0 = 0.0_wp !0.1_wp/sperd ! in units of s-1
 ! Prokaryotic linear mortality rate
-   m_l = 1.0e-9_wp ! in units of s-1
+   m_l = 1.0e-10_wp ! in units of s-1
 ! Prokaryotic quadratic mortality rate
-   m_q = 1.0e-16_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+   m_q = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 ! fraction of dead prokaryotic biomass that released as LDOC
    kappa = 0.0_wp
 ! Prokaryotic half saturation constant for iron
-   kfe_p = 2e-9_wp*conv_molkg_molm3
+   kfe_p = 0.1e-9_wp*conv_molkg_molm3
 ! Prokaryotic half saturation constant for LDOC
-   kldoc_p =  2.0e-6_wp*conv_molkg_molm3
+   kldoc_p =  1.0e-6_wp*conv_molkg_molm3
 ! Prokaryotic growth efficiency
    pge = 0.15_wp
 
 ! LDOC parameters
-   phi = 0.01_wp
+   phi = 0.0_wp
 
    
 RETURN

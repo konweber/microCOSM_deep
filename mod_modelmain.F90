@@ -34,7 +34,7 @@ IMPLICIT NONE
             psi_in,                                                    &
             dif_in,                                                    &    
             alpha_yr,                                                  &
-            gamma_in,                                                  &
+            ligphi_in,                                                  &
             lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
@@ -83,7 +83,7 @@ IMPLICIT NONE
             psi_in,                                                    &
             dif_in,                                                    &
             alpha_yr,                                                  &
-            gamma_in,                                                  & 
+            ligphi_in,                                                  & 
             lt_lifein,                                                 &
             atpco2in
 
@@ -218,7 +218,7 @@ IMPLICIT NONE
        fe_depo = fe_input / (weight_fe*speryr)
 
 ! ligand parameters
-       gamma_Fe   = gamma_in
+       ligphi   = ligphi_in
        dlambdadz  = dldz_in
        lt_lifetime= lt_lifein
 
@@ -362,7 +362,7 @@ IMPLICIT NONE
        write(15,*) 'psi_in', psi_in
        write(15,*) 'dif_in', dif_in
        write(15,*) 'alpha_yr', alpha_yr
-       write(15,*) 'gamma_in', gamma_in
+       write(15,*) 'ligphi_in', ligphi_in
        write(15,*) 'lt_lifein', lt_lifein
        write(15,*) 'dldz_in', dldz_in
        write(15,*) 'fe_input', fe_input
@@ -477,27 +477,27 @@ IMPLICIT NONE
          flimit = fet   / (fet   +   kfe ) 
 ! Limitation terms for prokaryotes
          flimit_p = fet / (fet + kfe_p)
-         WRITE(*,*) 'flimit_p', flimit_p
+         !WRITE(*,*) 'flimit_p', flimit_p
          ldoclimit_p = ldoc / (ldoc + kldoc_p)
-         WRITE(*,*) 'ldoclimit_p', ldoclimit_p
+         !WRITE(*,*) 'ldoclimit_p', ldoclimit_p
 
 ! -ve export is uptake by phytoplankton, +ve export is net remineralization
        bioP = CALC_PRODUCTION(nlimit, plimit, flimit, ilimit, alpha)
-       WRITE(*,*) 'bioP', bioP
+       !WRITE(*,*) 'bioP', bioP
 
 ! calculate prokaryotic biomass production
 ! pb in units cells m-3, pbp in cells m-3 s-1
        pbp = CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
-       WRITE(*,*) 'pbp', pbp
+       !WRITE(*,*) 'pbp', pbp
 
 ! calculate prokaryotic loss terms
 ! pb in units cells m-3, pbl in cells m-3 s-1
        pbl = CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
-       WRITE(*,*) 'pbl', pbl
+       !WRITE(*,*) 'pbl', pbl
 
 ! Nutrient addition through prokaryotic mortality (carbon units)
        cadd_pbl = pbl * (1.0_wp - kappa) * cellsm32molm3
-       write (*,*) 'cadd_pbl', cadd_pbl
+       ! write (*,*) 'cadd_pbl', cadd_pbl
 
        lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
 
@@ -514,7 +514,8 @@ IMPLICIT NONE
 ! The e-ratio is set to 1 for the deep boxes
 ! Constant factor phi gives the fraction of the produced biomass that forms LDOC
        ldocP = phi * bioP/eratio
-       write (*,*) 'ldocP', ldocP
+       ! write (*,*) 'ldocP', ldocP
+       ligP = ligphi * bioP/eratio
 
 ! carbonate flux depends on rain ratio
 ! Assumed to be unaffected by LDOC and prokaryotes
@@ -538,7 +539,13 @@ IMPLICIT NONE
 
 ! Dynamic ligand production is based on exudation in the surface layers depending on 
 !   production and release during remineralization in the ocean interior
-       dltdt = dltdt + (abs(export) * gamma_Fe - lambda * lt - lt/ldoc * pbp * cellsm32molm3 * 1.0_wp/pge)
+IF (ANY(ldoc <= 0.0_wp .OR. ldoc == 0.0_wp)) THEN
+   ! Handle the case where ldoc is non-positive or exactly zero (avoid division by zero)
+   dltdt = dltdt + (ligP * rCP - lambda * lt)
+ELSE
+   ! Perform the original calculation
+   dltdt = dltdt + (ligP * rCP - lambda * lt - lt/ldoc * pbp * cellsm32molm3 * 1.0_wp/pge)
+ENDIF
        ! Could also add a production term by prokaryotes here (pi term)
 
 ! input of iron (can include (vent source)/fe_sol)
@@ -559,7 +566,7 @@ IMPLICIT NONE
 ! In deep ocean release from sinking matter (that is otherwise remineralized)
 ! Change by prokaryotic uptake (and by mortality, kappa factor)
        dldocdt = dldocdt + ldocP * rCP + kappa * pbl * cellsm32molm3 - pbp/pge * cellsm32molm3
-       WRITE(*,*) 'dldocdt', dldocdt
+       !WRITE(*,*) 'dldocdt', dldocdt
        
        
 
@@ -576,21 +583,21 @@ IMPLICIT NONE
        theta = theta + dthetadt * dt 
        salt  = salt  + dsaltdt  * dt 
        dic   = dic   + ddicdt   * dt
-       WRITE(*,*) 'dic', dic 
+       !WRITE(*,*) 'dic', dic 
        alk   = alk   + dalkdt   * dt
-       WRITE(*,*) 'alk', alk 
+       !WRITE(*,*) 'alk', alk 
        po4   = po4   + dpo4dt   * dt
-       WRITE(*,*) 'po4', po4
+       !WRITE(*,*) 'po4', po4
        no3   = no3   + dno3dt   * dt
-       WRITE(*,*) 'no3', no3         
+       !WRITE(*,*) 'no3', no3         
        fet   = fet   + dfetdt   * dt 
-       WRITE(*,*) 'fet', fet
+       !WRITE(*,*) 'fet', fet
        lt    = lt    + dltdt    * dt 
-       WRITE(*,*) 'lt', lt
+       !WRITE(*,*) 'lt', lt
        ldoc  = ldoc  + dldocdt  * dt
-       WRITE(*,*) 'ldoc', ldoc
+       !WRITE(*,*) 'ldoc', ldoc
        pb    = pb    + dpbdt    * dt
-       WRITE(*,*) 'pb', pb
+       !WRITE(*,*) 'pb', pb
 
 ! evaluate pstar
        pstar  = MAX(calc_pstar(po4), calc_pstar(no3)) 
@@ -613,7 +620,7 @@ IMPLICIT NONE
        ldocM  = (ldocM+ ldoc / nmolkg2molm3 )
        pbM    = (pbM  + pb   / cellsmuL2cellsm3)
          
-       WRITE(*,*) '----------------------------------------------------------------------------------------'
+       !WRITE(*,*) '----------------------------------------------------------------------------------------'
        exportM= (exportM+export*vol*molps2gtcyr)
 
 ! Set flags according to calculated values
