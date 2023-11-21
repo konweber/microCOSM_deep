@@ -101,8 +101,8 @@
             felim_p                                                     
 
        ! Input some initial parameters
-       maxyears   = 1.e4_wp
-       outputyears= 1.e2_wp
+       maxyears   = 1.0e1_wp
+       outputyears= 1_wp
        outstepmax = int((maxyears/outputyears)+1)
        
        ! allocate memory
@@ -137,7 +137,7 @@
        fein     =      0._wp
        ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      1.e2_wp ! in cells µL-1
+       pbin     =      100.0_wp ! in cells µL-1
        ldocin   =      2._wp ! in nmol kg-1
        
 ! Overturning and mixing rates (m3/s)

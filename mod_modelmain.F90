@@ -166,7 +166,7 @@ IMPLICIT NONE
        sit = phin * umolkg2molm3 * rSIP
        ! Modification: addition of the 2 new input variables
        ldoc = ldocin * nmolkg2molm3
-       pb = pbin * cellsmuL2molm3
+       pb = pbin * cellsmuL2cellsm3
 
 ! More config/forcing variables
        K     = Kin
@@ -265,7 +265,7 @@ IMPLICIT NONE
        ltM    = lt  / nmolkg2molm3
        ldocM  = ldoc / nmolkg2molm3
 ! convert to cells µL-1 for pb
-       pbM    = pb   / cellsmuL2molm3
+       pbM    = pb   / cellsmuL2cellsm3
        exportM= export * vol * molps2gtcyr
        pstarM = pstar
        pco2M  = pco2ocean / uatm2atm
@@ -408,19 +408,27 @@ IMPLICIT NONE
          flimit = fet   / (fet   +   kfe ) 
 ! Limitation terms for prokaryotes
          flimit_p = fet / (fet + kfe_p)
+         WRITE(*,*) 'flimit_p', flimit_p
          ldoclimit_p = ldoc / (ldoc + kldoc_p)
+         WRITE(*,*) 'ldoclimit_p', ldoclimit_p
 
 ! -ve export is uptake by phytoplankton, +ve export is net remineralization
        bioP = CALC_PRODUCTION(nlimit, plimit, flimit, ilimit, alpha)
+       WRITE(*,*) 'bioP', bioP
 
 ! calculate prokaryotic biomass production
+! pb in units cells m-3, pbp in cells m-3 s-1
        pbp = CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
+       WRITE(*,*) 'pbp', pbp
 
 ! calculate prokaryotic loss terms
+! pb in units cells m-3, pbl in cells m-3 s-1
        pbl = CALC_PROKARYOTIC_LOSS(m_l, m_q, pb)
+       WRITE(*,*) 'pbl', pbl
 
 ! Nutrient addition through prokaryotic mortality (carbon units)
-       cadd_pbl = pbl * (1.0_wp - kappa)
+       cadd_pbl = pbl * (1.0_wp - kappa) * cellsm32molm3
+       write (*,*) 'cadd_pbl', cadd_pbl
 
        lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
 
@@ -437,6 +445,7 @@ IMPLICIT NONE
 ! The e-ratio is set to 1 for the deep boxes
 ! Constant factor phi gives the fraction of the produced biomass that forms LDOC
        ldocP = phi * bioP/eratio
+       write (*,*) 'ldocP', ldocP
 
 ! carbonate flux depends on rain ratio
 ! Assumed to be unaffected by LDOC and prokaryotes
@@ -460,7 +469,7 @@ IMPLICIT NONE
 
 ! Dynamic ligand production is based on exudation in the surface layers depending on 
 !   production and release during remineralization in the ocean interior
-       dltdt = dltdt + (abs(export) * gamma_Fe - lambda * lt - lt/ldoc * pbp * 1.0_wp/pge)
+       dltdt = dltdt + (abs(export) * gamma_Fe - lambda * lt - lt/ldoc * pbp * cellsm32molm3 * 1.0_wp/pge)
        ! Could also add a production term by prokaryotes here (pi term)
 
 ! input of iron (can include (vent source)/fe_sol)
@@ -474,13 +483,15 @@ IMPLICIT NONE
        dfetdt = dfetdt - Kscav*feprime 
        
 ! Uptake and release of Fe by prokaryotes
-       dfetdt = dfetdt + (pbl - pbp) * rFeC_pb
+       dfetdt = dfetdt + (pbl - pbp) * rFeC_pb * cellsm32molm3
 
 ! Change in LDOC
 ! Production through biomass production in surface ocean
 ! In deep ocean release from sinking matter (that is otherwise remineralized)
 ! Change by prokaryotic uptake (and by mortality, kappa factor)
-       dldocdt = dldocdt + ldocP * rCP + kappa * pbp - pbp/pge
+       dldocdt = dldocdt + ldocP * rCP + kappa * pbl * cellsm32molm3 - pbp/pge * cellsm32molm3
+       WRITE(*,*) 'dldocdt', dldocdt
+       
        
 
 ! Change in prokaryotic biomass is production minus loss
@@ -495,14 +506,22 @@ IMPLICIT NONE
 ! Euler forward step concentrations
        theta = theta + dthetadt * dt 
        salt  = salt  + dsaltdt  * dt 
-       dic   = dic   + ddicdt   * dt 
-       alk   = alk   + dalkdt   * dt 
+       dic   = dic   + ddicdt   * dt
+       WRITE(*,*) 'dic', dic 
+       alk   = alk   + dalkdt   * dt
+       WRITE(*,*) 'alk', alk 
        po4   = po4   + dpo4dt   * dt
-       no3   = no3   + dno3dt   * dt         
+       WRITE(*,*) 'po4', po4
+       no3   = no3   + dno3dt   * dt
+       WRITE(*,*) 'no3', no3         
        fet   = fet   + dfetdt   * dt 
+       WRITE(*,*) 'fet', fet
        lt    = lt    + dltdt    * dt 
+       WRITE(*,*) 'lt', lt
        ldoc  = ldoc  + dldocdt  * dt
+       WRITE(*,*) 'ldoc', ldoc
        pb    = pb    + dpbdt    * dt
+       WRITE(*,*) 'pb', pb
 
 ! evaluate pstar
        pstar  = MAX(calc_pstar(po4), calc_pstar(no3)) 
@@ -523,8 +542,9 @@ IMPLICIT NONE
        pco2M  = (pco2M+ pco2ocean / uatm2atm)
        pco2A  = (pco2A+ pco2atmos / uatm2atm)
        ldocM  = (ldocM+ ldoc / nmolkg2molm3 )
-       pbM    = (pbM  + pb   / cellsmuL2molm3)
+       pbM    = (pbM  + pb   / cellsmuL2cellsm3)
          
+       WRITE(*,*) '----------------------------------------------------------------------------------------'
        exportM= (exportM+export*vol*molps2gtcyr)
 
 ! Set flags according to calculated values

@@ -7,7 +7,7 @@ IMPLICIT NONE
 
 ! timestepping variables
 INTEGER                  :: nstepmax
-REAL(KIND=wp), PARAMETER :: dt           = 86400._wp 
+REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 24._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
@@ -25,7 +25,8 @@ REAL(KIND=wp), PARAMETER :: nmolkg2molm3 = conv_molkg_molm3 * 1.e-9_wp
 REAL(KIND=wp), PARAMETER :: uatm2atm     = 1.e-6_wp 
 REAL(KIND=wp), PARAMETER :: molps2gtcyr  = 106._wp * 12._wp * speryr * 1.e-15_wp
 ! NEED TO ADD CONVERSION FACTOR BETWEEN PROKARYOTIC BIOMASS AND ABUNDANCE
-REAL(KIND=wp), PARAMETER :: cellsmuL2molm3 = qc_prokar/weight_c * 1.e9_wp
+REAL(KIND=wp), PARAMETER :: cellsmuL2cellsm3 = 1.0e9_wp
+REAL(KIND=wp), PARAMETER :: cellsm32molm3 = qc_prokar/weight_c
 
 REAL(KIND=wp) :: zero, one, two, three, four, five,                      &
                     six, seven, eight, nine
@@ -148,22 +149,22 @@ IMPLICIT NONE
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
    rFeC_pb = 40._wp * 1.e-6_wp
-   mu0 = 1_wp/sperd ! in units of s-1
+   mu0 = 0.1_wp/sperd ! in units of s-1
 ! Prokaryotic linear mortality rate
-   m_l = 1.0e-8_wp ! in units of s-1
+   m_l = 1.0e-9_wp ! in units of s-1
 ! Prokaryotic quadratic mortality rate
-   m_q = 0.0_wp ! since pb is in molC per m3, this is in units of m3 per molC per s
+   m_q = 1.0e-16_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 ! fraction of dead prokaryotic biomass that released as LDOC
    kappa = 0.0_wp
 ! Prokaryotic half saturation constant for iron
-   kfe_p = 1e-9_wp*conv_molkg_molm3
+   kfe_p = 2e-9_wp*conv_molkg_molm3
 ! Prokaryotic half saturation constant for LDOC
-   kldoc_p =  1e-6_wp*conv_molkg_molm3
+   kldoc_p =  2.0e-6_wp*conv_molkg_molm3
 ! Prokaryotic growth efficiency
    pge = 0.15_wp
 
 ! LDOC parameters
-   phi = 0.1_wp
+   phi = 0.01_wp
 
    
 RETURN
