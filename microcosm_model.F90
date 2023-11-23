@@ -35,7 +35,7 @@
             outputyears,                                               &
             m2deg,                                                     &
 !            gaovla_opt,                                                &
-            gamma_in,                                                  &
+            ligphi_in,                                                  &
             lt_lifein,                                                 &
             alpha_yr,                                                  &
             atpco2in,                                                  &
@@ -101,8 +101,8 @@
             felim_p                                                     
 
        ! Input some initial parameters
-       maxyears   = 1.0e1_wp
-       outputyears= 1_wp
+       maxyears   = 2.0e2_wp
+       outputyears= 2.0e1_wp
        outstepmax = int((maxyears/outputyears)+1)
        
        ! allocate memory
@@ -134,11 +134,11 @@
        phin     =      2._wp
 !       niin     =     16._wp
        niin     =     36._wp
-       fein     =      0._wp
+       fein     =      0.1_wp
        ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      100.0_wp ! in cells µL-1
-       ldocin   =      2._wp ! in nmol kg-1
+       pbin     =      10.0_wp ! in cells µL-1
+       ldocin   =      2._wp ! in mumol kg-1
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -156,11 +156,13 @@
 !       gaovla_opt   = 4398._wp
 
 ! Gamma ligand production rate (in phosphate, not carbon, units)
-       gamma_in     = 0._wp !5.e-5_wp*106._wp
 !       gamma_in     = 5.e-5_wp*106._wp
+!       gamma_in     = 5.e-5_wp*106._wp
+
+       ligphi_in = 5e-6_wp
        
 ! Lambda ligand lifetime (s)
-       lt_lifein    = 0._wp ! 1._wp/((gamma_in/106._wp)/gaovla_opt)
+       lt_lifein    = 0.0_wp !(10._wp * 365._wp * 24._wp * 3600._wp) ! 1._wp/((5.e-5_wp*106._wp/106._wp)/4398._wp)
 !       lt_lifein    = 1._wp/((gamma_in/106._wp)/gaovla_opt)
        
 ! Dust deposition in g Fe m-2 year-1
@@ -474,7 +476,7 @@
             psi_in,                                                    &
             dif_in,                                                    &    
             alpha_yr,                                                  &
-            gamma_in,                                                  &
+            ligphi_in,                                                 &
             lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &

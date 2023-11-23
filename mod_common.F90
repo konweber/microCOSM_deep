@@ -7,12 +7,12 @@ IMPLICIT NONE
 
 ! timestepping variables
 INTEGER                  :: nstepmax
-REAL(KIND=wp), PARAMETER :: dt           = 86400._wp !/ 24._wp
+REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 12._wp !24._wp / 10._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
 ! carbon quota per cell of prokaryotic biomass (g C cell-1)
-REAL(KIND=wp), PARAMETER :: qc_prokar    = 1.0e-11_wp
+REAL(KIND=wp), PARAMETER :: qc_prokar    = 1.0e-14_wp ! 10 fg C cell-1
 REAL(KIND=wp), PARAMETER :: weight_c     = 12._wp
 
 ! Conversion factors
@@ -59,7 +59,7 @@ REAL(KIND=wp), DIMENSION(nbox) :: ddicdt, dalkdt, dpo4dt, dno3dt,         &
 REAL(KIND=wp), DIMENSION(nbox) :: dldocdt, dpbdt  
 
 ! Redfield ratios      
-REAL(KIND=wp) :: rCP, rNP, rPO2, rCN, rCO2, rCFe, rSIP, rCACO3
+REAL(KIND=wp) :: rCP, rNP, rPO2, rCN, rCO2, rCFe, rSIP, rCACO3, rCLig
 
 REAL(KIND=wp), DIMENSION(nbox) :: pco2ocean, fluxCO2  
 REAL(KIND=wp)                  :: netco2flux, atmos_moles, atmos_carbon,  &
@@ -124,6 +124,7 @@ IMPLICIT NONE
    rCFe = rCP/1.e-3_wp 
    rSIP = 15._wp
    rCACO3 = 10.e-2_wp 
+   rCLig = 30.0_wp ! number of carbon atoms per ligand molecule
 
    ph   = eight
 
@@ -149,9 +150,9 @@ IMPLICIT NONE
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
    rFeC_pb = 40._wp * 1.e-6_wp
-   mu0 = 0.0_wp !0.1_wp/sperd ! in units of s-1
+   mu0 = 0.1_wp/sperd ! in units of s-1
 ! Prokaryotic linear mortality rate
-   m_l = 1.0e-10_wp ! in units of s-1
+   m_l = 1.0e-11_wp ! in units of s-1
 ! Prokaryotic quadratic mortality rate
    m_q = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 ! fraction of dead prokaryotic biomass that released as LDOC
@@ -161,10 +162,10 @@ IMPLICIT NONE
 ! Prokaryotic half saturation constant for LDOC
    kldoc_p =  1.0e-6_wp*conv_molkg_molm3
 ! Prokaryotic growth efficiency
-   pge = 0.15_wp
+   pge = 0.25_wp
 
 ! LDOC parameters
-   phi = 0.0_wp
+   phi = 0.01_wp
 
    
 RETURN
