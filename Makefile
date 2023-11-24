@@ -14,9 +14,10 @@ DNAD_OBJ = dnad/dnad.o
 MODULE_OBJ = mod_precision.o mod_dimensions.o         \
              mod_common.o    mod_chemconst.o          \
              mod_chemspeciation.o mod_phsolvers.o     \
-             mod_carbonchem.o mod_modelmain.o
+	     mod_subroutines.o			      \
+             mod_carbonchem.o mod_modelmain_ensemble.o
              
-MODEL_OBJ  = microcosm_model.o
+MODEL_OBJ  = microcosm_model_ensemble.o
 
 # C preprocessing 
 CPPCMD = cat $< | $(FC) $(OPTIONDEFS) -cpp -P -E $(FFLAGS)

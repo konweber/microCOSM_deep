@@ -124,7 +124,6 @@ IMPLICIT NONE
    rCFe = rCP/1.e-3_wp 
    rSIP = 15._wp
    rCACO3 = 10.e-2_wp 
-   rCLig = 30.0_wp ! number of carbon atoms per ligand molecule
 
    ph   = eight
 
@@ -146,26 +145,6 @@ IMPLICIT NONE
    relaxfe = 0.01_wp * speryr  
 ! DIC gas exchange piston velocity coefficient
    Kwexch_av = 0.337_wp
-
-! Prokaryotic parameters
-! Prokaryotic biomass carbon to iron ratio
-   rFeC_pb = 40._wp * 1.e-6_wp
-   mu0 = 0.1_wp/sperd ! in units of s-1
-! Prokaryotic linear mortality rate
-   m_l = 1.0e-11_wp ! in units of s-1
-! Prokaryotic quadratic mortality rate
-   m_q = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-! fraction of dead prokaryotic biomass that released as LDOC
-   kappa = 0.0_wp
-! Prokaryotic half saturation constant for iron
-   kfe_p = 0.1e-9_wp*conv_molkg_molm3
-! Prokaryotic half saturation constant for LDOC
-   kldoc_p =  1.0e-6_wp*conv_molkg_molm3
-! Prokaryotic growth efficiency
-   pge = 0.25_wp
-
-! LDOC parameters
-   phi = 0.01_wp
 
    
 RETURN

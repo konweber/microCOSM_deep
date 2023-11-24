@@ -1,11 +1,13 @@
 ! -*- f90 -*-
-       MODULE MOD_MODELMAIN
+       MODULE MOD_MODELMAIN_ENSEMBLE
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION 
        USE MOD_PRECISION
        USE MOD_BOXES
        USE MOD_DIMENSIONS
        USE MOD_COMMON
        USE MOD_CARBONCHEM
+       ! Additonal subroutines for csv file output
+       USE MOD_SUBROUTINES
 IMPLICIT NONE
 ! --------------------------------------------------------
 ! List of (PRIVATE) routines/functions
@@ -67,9 +69,7 @@ IMPLICIT NONE
             ocpco2out,                                                 &
             atpco2out,                                                 &
             pbout,                                                     &
-            ldocout,                                                   &
-            lt_st_ldoc,                                                &
-            felim_p                                                    &
+            ldocout                                                    &
             )                                                           
             
 
@@ -130,9 +130,9 @@ IMPLICIT NONE
        INTEGER, intent(out), dimension (outstepmax) ::                 &
             nlout
 
-       LOGICAL, intent(out), dimension (outstepmax,nbox) ::            &
-            lt_st_ldoc,                                                &
-            felim_p                                                     
+       REAL(KIND=wp), dimension(39) ::                                 &
+                csv_data
+                                
 
 ! local variables
 !       include "comdeck.h"
@@ -140,7 +140,7 @@ IMPLICIT NONE
        REAL(KIND=wp) :: time
        CHARACTER*64  :: fmt, inifmt, varfmt, frep, filename
 !-----------------------------------------------------------------------         
-        
+       ! Parameters that are all the same independent of ensemble member 
        CALL common_assignments()
        
 ! set some parameters
@@ -208,9 +208,6 @@ IMPLICIT NONE
        flimit_p = zero
        ldoclimit_p = zero
 
-! Initial flags for ligand / LDOC ratio and prokaryotic Fe limitation
-       lt_st_ldoc(1, :) = lt < ldoc
-       felim_p(1, :) = flimit_p < ldoclimit_p
 
 !! Iron cycle parameters ......... 
 ! Iron external source
@@ -292,8 +289,6 @@ IMPLICIT NONE
                ' ATPCO2    ',                                          &
                repeat('   LDOC    ',nbox),                             &
                repeat('   PB      ',nbox)                              
-!               repeat('LIG < LDOC ',nbox)                              &
-!               repeat('  FELIM    ',nbox)                              &
 
 ! Construct fortran format string
 ! Output the time and nutrient limitation code
@@ -324,8 +319,7 @@ IMPLICIT NONE
                               pco2A,                                   &
                               ldocM,                                   &
                                 pbM                                    
-!                         lt_st_ldoc,                                   &
-!                            felim_p
+
 
 ! Also write parameters into a separate text file
        write (filename, '(a,I0.6,a)') 'microCOSM_deep_'    ,id,'_parameters.dat'
@@ -630,11 +624,6 @@ ENDIF
        !WRITE(*,*) '----------------------------------------------------------------------------------------'
        exportM= (exportM+export*vol*molps2gtcyr)
 
-! Set flags according to calculated values
-       lt_st_ldoc(outstep, :) = lt < ldoc
-
-       felim_p(outstep, :) = flimit_p < ldoclimit_p
-
 ! if an output time, write some output to screen and file
        if (mod(time,outputyears) .eq. 0)then
 ! For output, work out what the average is
@@ -673,8 +662,7 @@ ENDIF
                              pco2A,                                    &
                              ldocM,                                    &
                                pbM                                     
-!                         lt_st_ldoc,                                   &
-!                           felim_p
+
 #endif
        
 ! output to array
@@ -724,6 +712,13 @@ ENDIF
 ! close the output file
        close(14)
 #endif
+
+!=======================================================================
+! Write last timestep into csv file
+!=======================================================================
+       
+
+
        RETURN
        END SUBROUTINE MODEL
 !=======================================================================
@@ -999,4 +994,4 @@ INTEGER                             :: i
 
 !=======================================================================
 
-      END MODULE MOD_MODELMAIN
+      END MODULE MOD_MODELMAIN_ENSEMBLE

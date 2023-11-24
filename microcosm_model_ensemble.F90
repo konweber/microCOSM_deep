@@ -19,16 +19,17 @@
 !         |                              | 
 !         --------------------------------
 !=======================================================================
-       PROGRAM MICROCOSM_MODEL
+       PROGRAM MICROCOSM_MODEL_ENSEMBLE
 !=======================================================================
 
        USE MOD_PRECISION
        USE MOD_BOXES
-       USE MOD_MODELMAIN
+       USE MOD_MODELMAIN_ENSEMBLE
+       USE MOD_SUBROUTINES
 
        IMPLICIT NONE
 
-       INTEGER :: outstepmax, id
+       INTEGER :: outstepmax, id, id0
        
        REAL(KIND=wp) ::                                                &
             maxyears,                                                  &
@@ -93,12 +94,85 @@
        INTEGER, dimension (:), allocatable   ::                        &
             nlout
 
-! Logical arrays (nbox, by timestep dimensionesix)
-! lt_st_ldoc is true if the ligand concentration is lower than the LDOC concentration (this condition must be fulfilled)
-! felim_p is true if the iron concentration is limiting for the prokaryotic growth
-       LOGICAL, dimension(:,:), allocatable ::                          &
-            lt_st_ldoc,                                                 &
-            felim_p                                                     
+
+       ! Define the containers for the parameters that are cycled through
+       ! in the different ensemble runs
+       ! Dependent on the type of ensemble one wants to run, this must
+       ! be adjusted
+       REAL(KIND=wp), dimension (:), allocatable ::                    &
+            rFeC_pb_ens,                                               &
+            mu0_ens,                                                   &
+            m_l_ens,                                                   &
+            m_q_ens,                                                   &
+            kappa_ens,                                                 &
+            kfe_p_ens,                                                 &
+            kldoc_p_ens,                                               &
+            pge_ens,                                                   &
+            phi_ens,                                                   &
+            rCLig_ens,                                                 &
+            lt_lifein_ens
+
+       ! Define indices for the different ensemble parameters
+       INTEGER ::                                                      &
+            irFeC_pb,                                                  &
+            imu0,                                                      &
+            im_l,                                                      &
+            im_q,                                                      &
+            ikappa,                                                    &
+            ikfe_p,                                                    &
+            ikldoc_p,                                                  &
+            ipge,                                                      &
+            iphi,                                                      &
+            irCLig
+
+       ! csv file parameters
+       CHARACTER(len=255) :: filename
+       CHARACTER(len=10), allocatable :: headers(:)
+       INTEGER :: i
+
+       ALLOCATE(headers(39))
+
+              headers(1)  = 'id       '
+              headers(2)  = 'dt(s)    '
+              headers(3)  = 't(yr)    '
+              headers(4)  = 'rFeC_pb  '
+              headers(5)  = 'mu0      '
+              headers(6)  = 'm_l      '
+              headers(7)  = 'm_q      '
+              headers(8)  = 'kappa    '
+              headers(9)  = 'kfe_p    '
+              headers(10) = 'kldoc_p  '
+              headers(11) = 'pge      '
+              headers(12) = 'phi      '
+              headers(13) = 'rCLig    '
+              headers(14) = 'PB(1)    '
+              headers(15) = 'PB(2)    '
+              headers(16) = 'PB(3)    '
+              headers(17) = 'LDOC(1)  '
+              headers(18) = 'LDOC(2)  '
+              headers(19) = 'LDOC(3)  '
+              headers(20) = 'Fe(1)    '
+              headers(21) = 'Fe(2)    '
+              headers(22) = 'Fe(3)    '
+              headers(23) = 'PO4(1)   '
+              headers(24) = 'PO4(2)   '
+              headers(25) = 'PO4(3)   '
+              headers(26) = 'Lig(1)   '
+              headers(27) = 'Lig(2)   '
+              headers(28) = 'Lig(3)   '
+              headers(29) = 'ALK(1)   '
+              headers(30) = 'ALK(2)   '
+              headers(31) = 'ALK(3)   '
+              headers(32) = 'pCO2(1)  '
+              headers(33) = 'pCO2(2)  '
+              headers(34) = 'pCO2(3)  '
+              headers(35) = 'OCPCO2(1)'
+              headers(36) = 'OCPCO2(2)'
+              headers(37) = 'OCPCO2(3)'
+              headers(38) = 'ATPCO2   '
+              headers(39) = 'Limit    '
+       ! Set the output filename
+              filename = 'ensembleoutput.csv'
 
 !=======================================================================
 ! Time parameters
@@ -125,8 +199,16 @@
        allocate ( ocpco2out   (outstepmax,nbox) )
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
-       allocate ( lt_st_ldoc (outstepmax,nbox) )
-       allocate ( felim_p   (outstepmax,nbox) )
+       allocate ( rFeC_pb_ens  (1:3) )
+       allocate ( mu0_ens      (1:5) )
+       allocate ( m_l_ens      (1:10) )
+       allocate ( m_q_ens      (1:10) )
+       allocate ( kappa_ens    (1:1) )
+       allocate ( kfe_p_ens    (1:3) )
+       allocate ( kldoc_p_ens  (1:3) )
+       allocate ( pge_ens      (1:1) )
+       allocate ( phi_ens      (1:3) )
+       allocate ( rCLig_ens    (1:1) )
 !=======================================================================
 
 ! Initialize input arguements
@@ -183,28 +265,81 @@
 ! Export ratio (export production / total production)
        eratio_in    = 0._wp
 
+!=======================================================================
+! Parameters to cycle through
+
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
-   rFeC_pb = 40._wp * 1.e-6_wp
-   mu0 = 0.1_wp/sperd ! in units of s-1
+
+       rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
+       rFeC_pb_ens(2) = 40._wp * 1.e-6_wp
+       ! rFeC_pb_ens(3) = 80._wp * 1.e-6_wp
+
+! Prokaryotic maximum growth rate
+
+       mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
+       mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
+       mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd ! 
+       mu0_ens(4)  = 10._wp  * 1.0_wp/sperd ! 
+       mu0_ens(5)  = 100._wp * 1.0_wp/sperd ! 
+       
+
+
 ! Prokaryotic linear mortality rate
-   m_l = 1.0e-11_wp ! in units of s-1
+
+       m_l_ens(1)  = 1.0e-0_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(2)  = 1.0e-1_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(3)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(4)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(5)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(6)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(7)  = 1.0e-6_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(8)  = 1.0e-7_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(9)  = 1.0e-8_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(10) = 0                        ! in units of s-1
+
 ! Prokaryotic quadratic mortality rate
-   m_q = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+
+       m_q_ens(1)  = 1.0e-12_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(2)  = 1.0e-13_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(3)  = 1.0e-14_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(4)  = 1.0e-15_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(5)  = 1.0e-16_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(6)  = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(7)  = 1.0e-18_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(8)  = 1.0e-19_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(9)  = 1.0e-20_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(10) = 0          ! treat pb in cells per m3, this is in units of m3 per cell per s
+
+
 ! fraction of dead prokaryotic biomass that released as LDOC
-   kappa = 0.0_wp
+
+       kappa_ens(1) = 0.0_wp
+       
+
+
 ! Prokaryotic half saturation constant for iron
-   kfe_p = 1.0e-10_wp*conv_molkg_molm3
+
+       kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
+       kfe_p_ens(2) = 1.0e-9_wp  *conv_molkg_molm3
+       kfe_p_ens(3) = 1.0e-8_wp  *conv_molkg_molm3
+
 ! Prokaryotic half saturation constant for LDOC
-   kldoc_p =  1.0e-6_wp*conv_molkg_molm3
+
+       kldoc_p_ens(1) = 1.0e-7_wp *conv_molkg_molm3
+       kldoc_p_ens(2) = 1.0e-6_wp *conv_molkg_molm3
+       kldoc_p_ens(3) = 1.0e-5_wp *conv_molkg_molm3
+
 ! Prokaryotic growth efficiency
-   pge = 0.25_wp
+       pge_ens(1) = 0.25_wp
 
 ! LDOC parameters
-   phi = 0.01_wp
+       phi_ens(1) = 0.001_wp
+       phi_ens(2) = 0.01_wp
+       phi_ens(3) = 0.1_wp
 
-! File number identifier
-       id            = 25
+! File number identifier start for the ensemble
+       id0            = 100
 
 ! Array inputs
 #if defined(SIXBOX)
@@ -483,62 +618,120 @@
 ! photodegradation near the surface and slower loss in the deep
 ! Modification: first order loss in the deep is set to 0
        dldz_in(1:3)  = [ 1._wp, 1._wp, 0._wp ]
-#endif       
-
-       call model(                                                     &
-            id,                                                        &
-            maxyears,                                                  &
-            outputyears,                                               &
-            outstepmax,                                                &
-            dx,                                                        &
-            dy,                                                        &
-            dz,                                                        &
-            depth,                                                     &
-            latitude,                                                  &
-            Kin,                                                       &
-            Rin,                                                       &
-            Pin,                                                       &
-            psi_in,                                                    &
-            dif_in,                                                    &    
-            alpha_yr,                                                  &
-            ligphi_in,                                                 &
-            lt_lifein,                                                 &
-            dldz_in,                                                   &
-            fe_input,                                                  &
-            wind_in,                                                   &
-            fopen_in,                                                  &
-            thin,                                                      &
-            sain,                                                      &
-            cain,                                                      &
-            alin,                                                      &
-            phin,                                                      &
-            niin,                                                      &
-            fein,                                                      &
-            ltin,                                                      &
-            atpco2in,                                                  &
-            eratio_in,                                                 &
-            pbin,                                                      &
-            ldocin,                                                    &
-            tout,                                                      &            
-            thout,                                                     &
-            sout,                                                      &
-            cout,                                                      &
-            aout,                                                      &
-            pout,                                                      &
-            nout,                                                      &
-            fout,                                                      &
-            lout,                                                      &
-            expout,                                                    &
-            nlout,                                                     &
-            psout,                                                     &
-            ocpco2out,                                                 &
-            atpco2out,                                                 &
-            pbout,                                                     &
-            ldocout,                                                   &
-            lt_st_ldoc,                                                &
-            felim_p                                                    &
-            )
+#endif
 
 !=======================================================================
-       END PROGRAM MICROCOSM_MODEL
+! Initialize csv file
+!=======================================================================
+       CALL WRITE_CSV_HEADER(filename, headers, SIZE(headers))
+
+       DEALLOCATE(headers)
+       
+!=======================================================================
+! Start loop over ensemble
+!=======================================================================
+
+id = id0
+
+DO irFeC_pb = 1, size(rFeC_pb_ens)
+    rFeC_pb = rFeC_pb_ens(irFeC_pb)
+
+    DO imu0 = 1, size(mu0_ens)
+        mu0 = mu0_ens(imu0)
+
+        DO im_l = 1, size(m_l_ens)
+            m_l = m_l_ens(im_l)
+
+            DO im_q = 1, size(m_q_ens)
+                m_q = m_q_ens(im_q)
+
+                DO ikappa = 1, size(kappa_ens)
+                    kappa = kappa_ens(ikappa)
+
+                    DO ikfe_p = 1, size(kfe_p_ens)
+                        kfe_p = kfe_p_ens(ikfe_p)
+
+                        DO ikldoc_p = 1, size(kldoc_p_ens)
+                            kldoc_p = kldoc_p_ens(ikldoc_p)
+
+                            DO ipge = 1, size(pge_ens)
+                                pge = pge_ens(ipge)
+
+                                DO iphi = 1, size(phi_ens)
+                                    phi = phi_ens(iphi)
+
+                                    DO irCLig = 1, size(rCLig_ens)
+                                        rCLig = rCLig_ens(irCLig)
+
+                                        WRITE(*,*) 'id = ', id
+
+                                        call model(                                                    &
+                                            id,                                                        &
+                                            maxyears,                                                  &
+                                            outputyears,                                               &
+                                            outstepmax,                                                &
+                                            dx,                                                        &
+                                            dy,                                                        &
+                                            dz,                                                        &
+                                            depth,                                                     &
+                                            latitude,                                                  &
+                                            Kin,                                                       &
+                                            Rin,                                                       &
+                                            Pin,                                                       &
+                                            psi_in,                                                    &
+                                            dif_in,                                                    &    
+                                            alpha_yr,                                                  &
+                                            ligphi_in,                                                 &
+                                            lt_lifein,                                                 &
+                                            dldz_in,                                                   &
+                                            fe_input,                                                  &
+                                            wind_in,                                                   &
+                                            fopen_in,                                                  &
+                                            thin,                                                      &
+                                            sain,                                                      &
+                                            cain,                                                      &
+                                            alin,                                                      &
+                                            phin,                                                      &
+                                            niin,                                                      &
+                                            fein,                                                      &
+                                            ltin,                                                      &
+                                            atpco2in,                                                  &
+                                            eratio_in,                                                 &
+                                            pbin,                                                      &
+                                            ldocin,                                                    &
+                                            tout,                                                      &            
+                                            thout,                                                     &
+                                            sout,                                                      &
+                                            cout,                                                      &
+                                            aout,                                                      &
+                                            pout,                                                      &
+                                            nout,                                                      &
+                                            fout,                                                      &
+                                            lout,                                                      &
+                                            expout,                                                    &
+                                            nlout,                                                     &
+                                            psout,                                                     &
+                                            ocpco2out,                                                 &
+                                            atpco2out,                                                 &
+                                            pbout,                                                     &
+                                            ldocout                                                    &
+                                        )
+
+                                        id = id + 1
+                                        
+
+                                    END DO ! rCLig_ens
+                                END DO ! phi_ens
+                            END DO ! pge_ens
+                        END DO ! kldoc_p_ens
+                    END DO ! kfe_p_ens
+                END DO ! ikappa
+            END DO ! m_q_ens
+        END DO ! m_l_ens
+    END DO ! mu0_ens
+END DO ! rFeC_pb_ens
+
+
+!=======================================================================
+       END PROGRAM MICROCOSM_MODEL_ENSEMBLE
 !=======================================================================
