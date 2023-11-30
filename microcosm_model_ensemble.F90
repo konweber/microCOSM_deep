@@ -41,7 +41,8 @@
             alpha_yr,                                                  &
             atpco2in,                                                  &
             psi_in,                                                    &
-            dif_in
+            dif_in,                                                    &
+            lt_lifetime_factor
 
 ! Input arrays (nbox dimensionesix)
        REAL(KIND=wp), dimension (nbox) ::                              & 
@@ -110,7 +111,9 @@
             pge_ens,                                                   &
             phi_ens,                                                   &
             rCLig_ens,                                                 &
-            lt_lifein_ens
+            lt_lifein_ens,                                             &
+            ligphi_ens,                                                &
+            lt_lifetime_factor_ens
 
        ! Define indices for the different ensemble parameters
        INTEGER ::                                                      &
@@ -123,14 +126,17 @@
             ikldoc_p,                                                  &
             ipge,                                                      &
             iphi,                                                      &
-            irCLig
+            irCLig,                                                    &
+            ilt_lifein,                                                &
+            iligphi,                                                   &
+            ilt_lifetime_factor
 
        ! csv file parameters
-       CHARACTER(len=255) :: filename
+       CHARACTER(len=255) :: filename_csv
        CHARACTER(len=10), allocatable :: headers(:)
        INTEGER :: i
 
-       ALLOCATE(headers(39))
+       ALLOCATE(headers(45))
 
               headers(1)  = 'id       '
               headers(2)  = 'dt(s)    '
@@ -145,40 +151,48 @@
               headers(11) = 'pge      '
               headers(12) = 'phi      '
               headers(13) = 'rCLig    '
-              headers(14) = 'PB(1)    '
-              headers(15) = 'PB(2)    '
-              headers(16) = 'PB(3)    '
-              headers(17) = 'LDOC(1)  '
-              headers(18) = 'LDOC(2)  '
-              headers(19) = 'LDOC(3)  '
-              headers(20) = 'Fe(1)    '
-              headers(21) = 'Fe(2)    '
-              headers(22) = 'Fe(3)    '
-              headers(23) = 'PO4(1)   '
-              headers(24) = 'PO4(2)   '
-              headers(25) = 'PO4(3)   '
-              headers(26) = 'Lig(1)   '
-              headers(27) = 'Lig(2)   '
-              headers(28) = 'Lig(3)   '
-              headers(29) = 'ALK(1)   '
-              headers(30) = 'ALK(2)   '
-              headers(31) = 'ALK(3)   '
-              headers(32) = 'pCO2(1)  '
-              headers(33) = 'pCO2(2)  '
-              headers(34) = 'pCO2(3)  '
-              headers(35) = 'OCPCO2(1)'
-              headers(36) = 'OCPCO2(2)'
-              headers(37) = 'OCPCO2(3)'
-              headers(38) = 'ATPCO2   '
-              headers(39) = 'Limit    '
+              headers(14) = 'lt_lifet '
+              headers(15) = 'ligphi   '
+              headers(16) = 'lt_deepf '
+              headers(17) = 'PB(1)    '
+              headers(18) = 'PB(2)    '
+              headers(19) = 'PB(3)    '
+              headers(20) = 'LDOC(1)  '
+              headers(21) = 'LDOC(2)  '
+              headers(22) = 'LDOC(3)  '
+              headers(23) = 'Fe(1)    '
+              headers(24) = 'Fe(2)    '
+              headers(25) = 'Fe(3)    '
+              headers(26) = 'PO4(1)   '
+              headers(27) = 'PO4(2)   '
+              headers(28) = 'PO4(3)   '
+              headers(29) = 'NO3(1)   '
+              headers(30) = 'NO3(2)   '
+              headers(31) = 'NO3(3)   '
+              headers(32) = 'Lig(1)   '
+              headers(33) = 'Lig(2)   '
+              headers(34) = 'Lig(3)   '
+              headers(35) = 'DIC(1)   '
+              headers(36) = 'DIC(2)   '
+              headers(37) = 'DIC(3)   '
+              headers(38) = 'ALK(1)   '
+              headers(39) = 'ALK(2)   '
+              headers(40) = 'ALK(3)   '
+              headers(41) = 'OCPCO2(1)'
+              headers(42) = 'OCPCO2(2)'
+              headers(43) = 'OCPCO2(3)'
+              headers(44) = 'ATPCO2   '
+              headers(45) = 'Limit    '
+
+              
        ! Set the output filename
-              filename = 'ensembleoutput.csv'
+              filename_csv = 'ensemble8_noprokaryotes.csv'
 
 !=======================================================================
 ! Time parameters
        ! Input some initial parameters
-       maxyears   = 2.0e2_wp
-       outputyears= 2.0e1_wp
+       maxyears   = 1.0e4_wp
+       outputyears= 1.0e4_wp
        outstepmax = int((maxyears/outputyears)+1)
 !=======================================================================
        
@@ -199,16 +213,19 @@
        allocate ( ocpco2out   (outstepmax,nbox) )
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
-       allocate ( rFeC_pb_ens  (1:3) )
-       allocate ( mu0_ens      (1:5) )
-       allocate ( m_l_ens      (1:10) )
-       allocate ( m_q_ens      (1:10) )
+       allocate ( rFeC_pb_ens  (1:1) )
+       allocate ( mu0_ens      (1:1) )
+       allocate ( m_l_ens      (1:1) )
+       allocate ( m_q_ens      (1:1) )
        allocate ( kappa_ens    (1:1) )
-       allocate ( kfe_p_ens    (1:3) )
-       allocate ( kldoc_p_ens  (1:3) )
+       allocate ( kfe_p_ens    (1:1) )
+       allocate ( kldoc_p_ens  (1:1) )
        allocate ( pge_ens      (1:1) )
-       allocate ( phi_ens      (1:3) )
+       allocate ( phi_ens      (1:1) )
        allocate ( rCLig_ens    (1:1) )
+       allocate ( lt_lifein_ens(1:6) )
+       allocate ( ligphi_ens   (1:10) )
+       allocate ( lt_lifetime_factor_ens(1:6) )
 !=======================================================================
 
 ! Initialize input arguements
@@ -220,11 +237,11 @@
        phin     =      2._wp
 !       niin     =     16._wp
        niin     =     36._wp
-       fein     =      0.1_wp
+       fein     =      1._wp
        ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      10.0_wp ! in cells µL-1
-       ldocin   =      2._wp ! in mumol kg-1
+       pbin     =      0._wp ! in cells µL-1
+       ldocin   =      0.0_wp ! in mumol kg-1
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -271,75 +288,114 @@
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
 
-       rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
-       rFeC_pb_ens(2) = 40._wp * 1.e-6_wp
+       !rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
+       rFeC_pb_ens(1) = 40._wp * 1.e-6_wp
        ! rFeC_pb_ens(3) = 80._wp * 1.e-6_wp
 
 ! Prokaryotic maximum growth rate
 
-       mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
-       mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
-       mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd ! 
-       mu0_ens(4)  = 10._wp  * 1.0_wp/sperd ! 
-       mu0_ens(5)  = 100._wp * 1.0_wp/sperd ! 
+       mu0_ens(1)  = 0.0_wp
+       ! mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
+       ! mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
+       ! mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd !
+
+       ! mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd ! 
+       ! mu0_ens(4)  = 10._wp  * 1.0_wp/sperd ! 
+       ! mu0_ens(5)  = 100._wp * 1.0_wp/sperd ! 
        
 
 
 ! Prokaryotic linear mortality rate
 
-       m_l_ens(1)  = 1.0e-0_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(2)  = 1.0e-1_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(3)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(4)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(5)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(6)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(7)  = 1.0e-6_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(8)  = 1.0e-7_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(9)  = 1.0e-8_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(10) = 0                        ! in units of s-1
+       ! already tried m_l = 1 d-1 which is too high, always gives wrong numbers
+
+       ! m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(2)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(3)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(1)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(2)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(2)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(4)  = 1.0e-6_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(3)  = 1.0e-7_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(9) = 0                        ! in units of s-1
 
 ! Prokaryotic quadratic mortality rate
 
-       m_q_ens(1)  = 1.0e-12_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(2)  = 1.0e-13_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(3)  = 1.0e-14_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(4)  = 1.0e-15_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(5)  = 1.0e-16_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(6)  = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(7)  = 1.0e-18_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(8)  = 1.0e-19_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(9)  = 1.0e-20_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       m_q_ens(10) = 0          ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(1)  = 1.0e-19_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       ! m_q_ens(2)  = 1.0e-20_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       ! m_q_ens(2)  = 1.0e-21_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       ! m_q_ens(4)  = 1.0e-22_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       ! m_q_ens(3)  = 1.0e-23_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 
 
 ! fraction of dead prokaryotic biomass that released as LDOC
 
        kappa_ens(1) = 0.0_wp
+       ! kappa_ens(2) = 1.0_wp
        
 
 
 ! Prokaryotic half saturation constant for iron
 
-       kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
-       kfe_p_ens(2) = 1.0e-9_wp  *conv_molkg_molm3
-       kfe_p_ens(3) = 1.0e-8_wp  *conv_molkg_molm3
+       ! kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
+       kfe_p_ens(1) = 1.0e-9_wp  *conv_molkg_molm3
+       ! kfe_p_ens(3) = 1.0e-8_wp  *conv_molkg_molm3
 
 ! Prokaryotic half saturation constant for LDOC
 
-       kldoc_p_ens(1) = 1.0e-7_wp *conv_molkg_molm3
-       kldoc_p_ens(2) = 1.0e-6_wp *conv_molkg_molm3
-       kldoc_p_ens(3) = 1.0e-5_wp *conv_molkg_molm3
+       ! kldoc_p_ens(1) = 1.0e-7_wp *conv_molkg_molm3
+       kldoc_p_ens(1) = 1.0e-6_wp *conv_molkg_molm3
+       ! kldoc_p_ens(2) = 1.0e-5_wp *conv_molkg_molm3
 
 ! Prokaryotic growth efficiency
        pge_ens(1) = 0.25_wp
 
 ! LDOC parameters
-       phi_ens(1) = 0.001_wp
-       phi_ens(2) = 0.01_wp
-       phi_ens(3) = 0.1_wp
+       phi_ens(1) = 0.0_wp
+       ! phi_ens(1) = 1.0e-10_wp
+       ! phi_ens(2) = 1.0e-9_wp
+       ! phi_ens(3) = 1.0e-8_wp
+       ! phi_ens(1) = 1.0e-7_wp
+       ! phi_ens(2) = 1.0e-6_wp
+       ! phi_ens(1) = 1.0e-5_wp
+       ! phi_ens(2) = 1.0e-4_wp
+       ! phi_ens(2) = 1.0e-3_wp
+       ! phi_ens(3) = 1.0e-2_wp
+
+! Ligand parameters
+       ! rCLig_ens(1) = 15.0_wp
+       rCLig_ens(1) = 30.0_wp
+
+! Ligand lifetimes for the surface ocean
+       lt_lifein_ens(1) = 1._wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(2) = 5._wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(3) = 10._wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(4) = 50.0_wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(5) = 100.0_wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(6) = 1000.0_wp * 365._wp * 24._wp * 3600._wp
+
+! Ligand production rates as fraction of the primary production
+       ligphi_ens(1) = 1.0e-8_wp
+       ligphi_ens(2) = 5.0e-8_wp
+       ligphi_ens(3) = 1.0e-7_wp
+       ligphi_ens(4) = 5.0e-7_wp
+       ligphi_ens(5) = 1.0e-6_wp
+       ligphi_ens(6) = 5.0e-6_wp
+       ligphi_ens(7) = 1.0e-5_wp
+       ligphi_ens(8) = 5.0e-5_wp
+       ligphi_ens(9) = 1.0e-4_wp
+       ligphi_ens(10) = 1.0e-3_wp
+
+! Deep ocean box lifetime modifier, longer lifetime in the deep ocean
+       lt_lifetime_factor_ens(1) = 1.0_wp
+       lt_lifetime_factor_ens(2) = 5.0_wp
+       lt_lifetime_factor_ens(3) = 10.0_wp
+       lt_lifetime_factor_ens(4) = 50.0_wp
+       lt_lifetime_factor_ens(5) = 100.0_wp
+       lt_lifetime_factor_ens(6) = 1000.0_wp
 
 ! File number identifier start for the ensemble
-       id0            = 100
+       id0            =     35000
 
 ! Array inputs
 #if defined(SIXBOX)
@@ -434,7 +490,7 @@
 
 ! Export ratio is smaller than 1 for the surface boxes
 ! Export ratio is 1 for the deep boxes
-       eratio_in(1:6)= [ 0.1_wp, 1._wp, 0.1_wp, 1._wp, 0.1_wp, 1._wp ]
+       eratio_in(1:6)= [ 0.1_wp, 0.5_wp, 0.1_wp, 0.5_wp, 0.1_wp, 0.5_wp ]
 ! ==============================================================================
 ! Surface values need ajustment !!!
 ! ==============================================================================       
@@ -525,7 +581,7 @@
 
 ! Export ratio is smaller than 1 for the surface boxes
 ! Export ratio is 1 for the deep boxes
-       eratio_in(1:4)= [ 0.25_wp, 1._wp, 1._wp, 0.1_wp ]       
+       eratio_in(1:4)= [ 0.25_wp, 0.5_wp, 0.5_wp, 0.1_wp ]       
        
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:4)= [ 1.5e-3_wp, 1.5e-3_wp, 1.5e-1_wp,               &
@@ -606,7 +662,7 @@
 
 ! Export ratio is smaller than 1 for the surface boxes
 ! Export ratio is 1 for the deep boxes
-       eratio_in(1:3)= [ 0.25_wp, 0.1_wp, 1._wp ]   
+       eratio_in(1:3)= [ 0.25_wp, 0.1_wp, 0.5_wp ]   
 
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:3)= [ 1.5e-3_wp, 1.5e-1_wp,                          &
@@ -617,13 +673,13 @@
 ! Deep ocean box lifetime modifier to capture the gradient due to
 ! photodegradation near the surface and slower loss in the deep
 ! Modification: first order loss in the deep is set to 0
-       dldz_in(1:3)  = [ 1._wp, 1._wp, 0._wp ]
+       dldz_in(1:3)  = [ 1._wp, 1._wp, 0.0_wp ]
 #endif
 
 !=======================================================================
 ! Initialize csv file
 !=======================================================================
-       CALL WRITE_CSV_HEADER(filename, headers, SIZE(headers))
+       CALL WRITE_CSV_HEADER(filename_csv, headers, SIZE(headers))
 
        DEALLOCATE(headers)
        
@@ -663,63 +719,78 @@ DO irFeC_pb = 1, size(rFeC_pb_ens)
                                     DO irCLig = 1, size(rCLig_ens)
                                         rCLig = rCLig_ens(irCLig)
 
-                                        WRITE(*,*) 'id = ', id
+                                        DO ilt_lifein = 1, size(lt_lifein_ens)
+                                            lt_lifein = lt_lifein_ens(ilt_lifein)
 
-                                        call model(                                                    &
-                                            id,                                                        &
-                                            maxyears,                                                  &
-                                            outputyears,                                               &
-                                            outstepmax,                                                &
-                                            dx,                                                        &
-                                            dy,                                                        &
-                                            dz,                                                        &
-                                            depth,                                                     &
-                                            latitude,                                                  &
-                                            Kin,                                                       &
-                                            Rin,                                                       &
-                                            Pin,                                                       &
-                                            psi_in,                                                    &
-                                            dif_in,                                                    &    
-                                            alpha_yr,                                                  &
-                                            ligphi_in,                                                 &
-                                            lt_lifein,                                                 &
-                                            dldz_in,                                                   &
-                                            fe_input,                                                  &
-                                            wind_in,                                                   &
-                                            fopen_in,                                                  &
-                                            thin,                                                      &
-                                            sain,                                                      &
-                                            cain,                                                      &
-                                            alin,                                                      &
-                                            phin,                                                      &
-                                            niin,                                                      &
-                                            fein,                                                      &
-                                            ltin,                                                      &
-                                            atpco2in,                                                  &
-                                            eratio_in,                                                 &
-                                            pbin,                                                      &
-                                            ldocin,                                                    &
-                                            tout,                                                      &            
-                                            thout,                                                     &
-                                            sout,                                                      &
-                                            cout,                                                      &
-                                            aout,                                                      &
-                                            pout,                                                      &
-                                            nout,                                                      &
-                                            fout,                                                      &
-                                            lout,                                                      &
-                                            expout,                                                    &
-                                            nlout,                                                     &
-                                            psout,                                                     &
-                                            ocpco2out,                                                 &
-                                            atpco2out,                                                 &
-                                            pbout,                                                     &
-                                            ldocout                                                    &
-                                        )
+                                          DO iligphi = 1, size(ligphi_ens)
+                                            ligphi_in = ligphi_ens(iligphi)
 
-                                        id = id + 1
-                                        
+                                            DO ilt_lifetime_factor = 1, size(lt_lifetime_factor_ens)
+                                                lt_lifetime_factor = lt_lifetime_factor_ens(ilt_lifetime_factor)
 
+
+
+                                                 WRITE(*,*) 'id = ', id
+
+                                                        dldz_in(1:3)  = [ 1._wp, 1._wp, 1.0_wp / lt_lifetime_factor ]
+
+                                                 call model(                                                    &
+                                                        id,                                                        &
+                                                        filename_csv,                                              &
+                                                        maxyears,                                                  &
+                                                        outputyears,                                               &
+                                                        outstepmax,                                                &
+                                                        dx,                                                        &
+                                                        dy,                                                        &
+                                                        dz,                                                        &
+                                                        depth,                                                     &
+                                                        latitude,                                                  &
+                                                        Kin,                                                       &
+                                                        Rin,                                                       &
+                                                        Pin,                                                       &
+                                                        psi_in,                                                    &
+                                                        dif_in,                                                    &    
+                                                        alpha_yr,                                                  &
+                                                        ligphi_in,                                                 &
+                                                        lt_lifein,                                                 &
+                                                        dldz_in,                                                   &
+                                                        fe_input,                                                  &
+                                                        wind_in,                                                   &
+                                                        fopen_in,                                                  &
+                                                        thin,                                                      &
+                                                        sain,                                                      &
+                                                        cain,                                                      &
+                                                        alin,                                                      &
+                                                        phin,                                                      &
+                                                        niin,                                                      &
+                                                        fein,                                                      &
+                                                        ltin,                                                      &
+                                                        atpco2in,                                                  &
+                                                        eratio_in,                                                 &
+                                                        pbin,                                                      &
+                                                        ldocin,                                                    &
+                                                        tout,                                                      &            
+                                                        thout,                                                     &
+                                                        sout,                                                      &
+                                                        cout,                                                      &
+                                                        aout,                                                      &
+                                                        pout,                                                      &
+                                                        nout,                                                      &
+                                                        fout,                                                      &
+                                                        lout,                                                      &
+                                                        expout,                                                    &
+                                                        nlout,                                                     &
+                                                        psout,                                                     &
+                                                        ocpco2out,                                                 &
+                                                        atpco2out,                                                 &
+                                                        pbout,                                                     &
+                                                        ldocout                                                    &
+                                                 )
+
+                                                 id = id + 1
+                                              END DO ! ilt_lifetime_factor
+                                          END DO ! ligphi_ens
+                                        END DO ! lt_lifein
                                     END DO ! rCLig_ens
                                 END DO ! phi_ens
                             END DO ! pge_ens

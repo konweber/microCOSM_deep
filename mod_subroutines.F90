@@ -26,7 +26,7 @@ SUBROUTINE WRITE_CSV_HEADER(filename, headers, num_headers)
    CLOSE(unit_number)
 END SUBROUTINE WRITE_CSV_HEADER
 
-   SUBROUTINE append_to_csv(filename, data)
+SUBROUTINE append_to_csv(filename, data)
       CHARACTER(LEN=*), INTENT(IN) :: filename
       REAL(KIND=wp), DIMENSION(:), INTENT(IN) :: data
       INTEGER :: i
@@ -36,15 +36,15 @@ END SUBROUTINE WRITE_CSV_HEADER
 
       DO i = 1, SIZE(data)
          IF (i /= SIZE(data)) THEN
-            WRITE(unit_number, '(f0.6,1x)', advance='no') data(i)
+            WRITE(unit_number, '(f0.24,1x)', advance='no') data(i)
          ELSE
-            WRITE(unit_number, '(f0.6)', advance='no') data(i)
+            WRITE(unit_number, '(f0.24)', advance='no') data(i)
          END IF
       END DO
 
       WRITE(unit_number, *)
 
       CLOSE(unit_number)
-   END SUBROUTINE append_to_csv
+END SUBROUTINE append_to_csv
 
 END MODULE MOD_SUBROUTINES

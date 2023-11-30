@@ -67,9 +67,7 @@ IMPLICIT NONE
             ocpco2out,                                                 &
             atpco2out,                                                 &
             pbout,                                                     &
-            ldocout,                                                   &
-            lt_st_ldoc,                                                &
-            felim_p                                                    &
+            ldocout                                                    &
             )                                                           
             
 
@@ -129,10 +127,7 @@ IMPLICIT NONE
 
        INTEGER, intent(out), dimension (outstepmax) ::                 &
             nlout
-
-       LOGICAL, intent(out), dimension (outstepmax,nbox) ::            &
-            lt_st_ldoc,                                                &
-            felim_p                                                     
+                                                   
 
 ! local variables
 !       include "comdeck.h"
@@ -205,12 +200,10 @@ IMPLICIT NONE
        flimit = zero
        export = zero
        lim    = 0
+       lim_p  = 0
        flimit_p = zero
        ldoclimit_p = zero
 
-! Initial flags for ligand / LDOC ratio and prokaryotic Fe limitation
-       lt_st_ldoc(1, :) = lt < ldoc
-       felim_p(1, :) = flimit_p < ldoclimit_p
 
 !! Iron cycle parameters ......... 
 ! Iron external source
@@ -292,8 +285,7 @@ IMPLICIT NONE
                ' ATPCO2    ',                                          &
                repeat('   LDOC    ',nbox),                             &
                repeat('   PB      ',nbox)                              
-!               repeat('LIG < LDOC ',nbox)                              &
-!               repeat('  FELIM    ',nbox)                              &
+
 
 ! Construct fortran format string
 ! Output the time and nutrient limitation code
@@ -324,8 +316,7 @@ IMPLICIT NONE
                               pco2A,                                   &
                               ldocM,                                   &
                                 pbM                                    
-!                         lt_st_ldoc,                                   &
-!                            felim_p
+                                
 
 ! Also write parameters into a separate text file
        write (filename, '(a,I0.6,a)') 'microCOSM_deep_'    ,id,'_parameters.dat'
@@ -486,6 +477,9 @@ IMPLICIT NONE
        bioP = CALC_PRODUCTION(nlimit, plimit, flimit, ilimit, alpha)
        !WRITE(*,*) 'bioP', bioP
 
+       lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
+       ! lim_p =
+
 ! calculate prokaryotic biomass production
 ! pb in units cells m-3, pbp in cells m-3 s-1
        pbp = CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
@@ -500,7 +494,7 @@ IMPLICIT NONE
        cadd_pbl = pbl * (1.0_wp - kappa) * cellsm32molm3
        ! write (*,*) 'cadd_pbl', cadd_pbl
 
-       lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
+
 
 ! scale rate of nutrient export with rate of phosphorus export
 ! R matrix determines export flux and remineralization locations
@@ -514,10 +508,10 @@ IMPLICIT NONE
 ! There is an additional term to account for the total biomass production
 ! The e-ratio is set to 1 for the deep boxes
 ! Constant factor phi gives the fraction of the produced biomass that forms LDOC
-       ldocP = phi * bioP/eratio
+       ldocP = phi * ABS(export) * ( 1.0_wp / eratio - 1.0_wp)
        ! write (*,*) 'ldocP', ldocP
 ! Production of ligand based on biomass production
-       ligP = ligphi * bioP/eratio
+       ligP = ligphi * ABS(export)* ( 1.0_wp / eratio - 1.0_wp)
 
 ! carbonate flux depends on rain ratio
 ! Assumed to be unaffected by LDOC and prokaryotes

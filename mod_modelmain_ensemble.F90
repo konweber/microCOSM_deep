@@ -22,6 +22,7 @@ IMPLICIT NONE
 !=======================================================================
        SUBROUTINE MODEL(                                               &
             id,                                                        &
+            filename_csv,                                              &
             maxyears,                                                  &
             outputyears,                                               &
             outstepmax,                                                &
@@ -36,7 +37,7 @@ IMPLICIT NONE
             psi_in,                                                    &
             dif_in,                                                    &    
             alpha_yr,                                                  &
-            ligphi_in,                                                  &
+            ligphi_in,                                                 &
             lt_lifein,                                                 &
             dldz_in,                                                   &
             fe_input,                                                  &
@@ -130,8 +131,13 @@ IMPLICIT NONE
        INTEGER, intent(out), dimension (outstepmax) ::                 &
             nlout
 
-       REAL(KIND=wp), dimension(39) ::                                 &
+       REAL(KIND=wp), dimension(45) ::                                 &
                 csv_data
+
+       CHARACTER(len=255) ::                                           &
+              filename_csv
+
+       REAL(KIND=wp) :: id_real4, pco2A_real4, lim_real4
                                 
 
 ! local variables
@@ -205,6 +211,7 @@ IMPLICIT NONE
        flimit = zero
        export = zero
        lim    = 0
+       ! lim_p  = 0
        flimit_p = zero
        ldoclimit_p = zero
 
@@ -480,6 +487,9 @@ IMPLICIT NONE
        bioP = CALC_PRODUCTION(nlimit, plimit, flimit, ilimit, alpha)
        !WRITE(*,*) 'bioP', bioP
 
+       lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
+       ! lim_p =
+
 ! calculate prokaryotic biomass production
 ! pb in units cells m-3, pbp in cells m-3 s-1
        pbp = CALC_PROKARYOTE_PRODUCTION(mu0, ldoclimit_p, flimit_p, pb)
@@ -493,8 +503,7 @@ IMPLICIT NONE
 ! Nutrient addition through prokaryotic mortality (carbon units)
        cadd_pbl = pbl * (1.0_wp - kappa) * cellsm32molm3
        ! write (*,*) 'cadd_pbl', cadd_pbl
-
-       lim  = NUTRIENT_LIMIT_CODE(plimit, nlimit, flimit, ilimit)
+       
 
 ! scale rate of nutrient export with rate of phosphorus export
 ! R matrix determines export flux and remineralization locations
@@ -508,10 +517,10 @@ IMPLICIT NONE
 ! There is an additional term to account for the total biomass production
 ! The e-ratio is set to 1 for the deep boxes
 ! Constant factor phi gives the fraction of the produced biomass that forms LDOC
-       ldocP = phi * bioP/eratio
+       ldocP = phi * ABS(export) * ( 1.0_wp / eratio - 1.0_wp)
        ! write (*,*) 'ldocP', ldocP
 ! Production of ligand based on biomass production
-       ligP = ligphi * bioP/eratio
+       ligP = ligphi * ABS(export) * ( 1.0_wp / eratio - 1.0_wp)
 
 ! carbonate flux depends on rain ratio
 ! Assumed to be unaffected by LDOC and prokaryotes
@@ -544,7 +553,7 @@ IF (ANY(ldoc <= 0.0_wp .OR. ldoc == 0.0_wp)) THEN
    dltdt = dltdt + (ligP * rCP - lambda * lt)
 ELSE
    ! Perform the original calculation
-   dltdt = dltdt + (ligP * rCP - lambda * lt - lt/ldoc * rCLig * pbp * cellsm32molm3 * 1.0_wp/pge) ! + ligphi * pbl * cellsm32molm3
+   dltdt = dltdt + (ligP * rCP - lambda * lt - lt/ldoc * rCLig * pbp * cellsm32molm3 * 1.0_wp/pge) + ligphi * pbl * cellsm32molm3
    ! need to add term that accounts for the production of ligands through turnover of prokaryotic biomass
 ENDIF
        ! Could also add a production term by prokaryotes here (pi term)
@@ -595,7 +604,8 @@ ENDIF
        !WRITE(*,*) 'fet', fet
        lt    = lt    + dltdt    * dt 
        !WRITE(*,*) 'lt', lt
-       ldoc  = ldoc  + dldocdt  * dt
+       ldoc  = MAX(ldoc  + dldocdt  * dt, 0.0_wp) ! if LDOC drops intermittedly below zero, set to zero
+                                                  ! to avoid madness with negative LDOC concentrations
        !WRITE(*,*) 'ldoc', ldoc
        pb    = pb    + dpbdt    * dt
        !WRITE(*,*) 'pb', pb
@@ -717,7 +727,40 @@ ENDIF
 ! Write last timestep into csv file
 !=======================================================================
        
+       id_real4 = REAL(id)
+       pco2A_real4 = REAL(pco2A)
+       lim_real4 = REAL(lim)
 
+       csv_data = [id_real4,                            &
+                     dt,                              &
+                     time,                   &
+                     rFeC_pb,                         &
+                     mu0,                             &
+                     m_l,                             &
+                     m_q,                             &
+                     kappa,                           &
+                     kfe_p,                           &
+                     kldoc_p,                         &
+                     pge,                             &
+                     phi,                             &
+                     rCLig,                           &
+                     lt_lifein,                       &
+                     ligphi,                          &
+                     1.0_wp / dldz_in(3),              &
+                     pb / cellsmuL2cellsm3,             &
+                     ldoc / umolkg2molm3,               &
+                     fet / nmolkg2molm3,                &
+                     po4 / umolkg2molm3,                &
+                     no3 / umolkg2molm3,                &
+                     lt  / nmolkg2molm3,                &
+                     dic / umolkg2molm3,                & 
+                     alk / umolkg2molm3,                &
+                     pco2ocean / uatm2atm,              &
+                     pco2A_real4 / uatm2atm,                &
+                     lim_real4                             &
+       ]
+
+       call append_to_csv(filename_csv, csv_data)
 
        RETURN
        END SUBROUTINE MODEL
