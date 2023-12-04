@@ -93,13 +93,6 @@
        INTEGER, dimension (:), allocatable   ::                        &
             nlout
 
-! Logical arrays (nbox, by timestep dimensionesix)
-! lt_st_ldoc is true if the ligand concentration is lower than the LDOC concentration (this condition must be fulfilled)
-! felim_p is true if the iron concentration is limiting for the prokaryotic growth
-       LOGICAL, dimension(:,:), allocatable ::                          &
-            lt_st_ldoc,                                                 &
-            felim_p                                                     
-
 !=======================================================================
 ! Time parameters
        ! Input some initial parameters
@@ -138,11 +131,11 @@
        phin     =      2._wp
 !       niin     =     16._wp
        niin     =     36._wp
-       fein     =      0.1_wp
+       fein     =      1._wp
        ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      10.0_wp ! in cells µL-1
-       ldocin   =      2._wp ! in mumol kg-1
+       pbin     =      100.0_wp ! in cells µL-1
+       ldocin   =      0.01_wp ! in mumol kg-1
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -190,11 +183,11 @@
 ! Prokaryotic linear mortality rate
    m_l = 1.0e-11_wp ! in units of s-1
 ! Prokaryotic quadratic mortality rate
-   m_q = 1.0e-17_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+   m_q = 1.0e-22_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 ! fraction of dead prokaryotic biomass that released as LDOC
    kappa = 0.0_wp
 ! Prokaryotic half saturation constant for iron
-   kfe_p = 1.0e-10_wp*conv_molkg_molm3
+   kfe_p = 1.0e-9_wp*conv_molkg_molm3
 ! Prokaryotic half saturation constant for LDOC
    kldoc_p =  1.0e-6_wp*conv_molkg_molm3
 ! Prokaryotic growth efficiency
@@ -299,7 +292,7 @@
 
 ! Export ratio is smaller than 1 for the surface boxes
 ! Export ratio is 1 for the deep boxes
-       eratio_in(1:6)= [ 0.1_wp, 1._wp, 0.1_wp, 1._wp, 0.1_wp, 1._wp ]
+       eratio_in(1:6)= [ 0.1_wp, 0.5_wp, 0.1_wp, 0.5_wp, 0.1_wp, 0.5_wp ]
 ! ==============================================================================
 ! Surface values need ajustment !!!
 ! ==============================================================================       
@@ -390,7 +383,7 @@
 
 ! Export ratio is smaller than 1 for the surface boxes
 ! Export ratio is 1 for the deep boxes
-       eratio_in(1:4)= [ 0.25_wp, 1._wp, 1._wp, 0.1_wp ]       
+       eratio_in(1:4)= [ 0.25_wp, 0.5_wp, 0.5_wp, 0.1_wp ]       
        
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:4)= [ 1.5e-3_wp, 1.5e-3_wp, 1.5e-1_wp,               &
@@ -470,8 +463,8 @@
        fopen_in(1:3)= [ 1._wp, 1._wp, 0._wp ]
 
 ! Export ratio is smaller than 1 for the surface boxes
-! Export ratio is 1 for the deep boxes
-       eratio_in(1:3)= [ 0.25_wp, 0.1_wp, 1._wp ]   
+! Export ratio is 0.5 for the deep boxes, such that 1/eratio - 1 = 1
+       eratio_in(1:3)= [ 0.25_wp, 0.1_wp, 0.5_wp ]   
 
 ! Dust deposition in g Fe m-2 year-1
        fe_input(1:3)= [ 1.5e-3_wp, 1.5e-1_wp,                          &

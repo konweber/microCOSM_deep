@@ -7,7 +7,7 @@ IMPLICIT NONE
 
 ! timestepping variables
 INTEGER                  :: nstepmax
-REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 12._wp !24._wp / 10._wp
+REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 2._wp !24._wp / 10._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp
@@ -138,9 +138,9 @@ IMPLICIT NONE
 !solubility of iron:
    fe_sol = 0.0025_wp
 ! conditional stability FeL: (mol kg-1)-1
-   beta   = 1.0e9_wp 
+   beta   = 1.0e12_wp ! 1.0e9_wp
 ! Free Fe scavenging rate: (s-1) 
-   Kscav  = 1.0e-7_wp    
+   Kscav  = 1.0e-7_wp ! = 3.15 yr-1 (rather high)
 ! relaxfe (s) 
    relaxfe = 0.01_wp * speryr  
 ! DIC gas exchange piston velocity coefficient

@@ -65,7 +65,8 @@
             fopen_in,                                                  &
             eratio_in,                                                 &
             pbin,                                                      &
-            ldocin
+            ldocin,                                                    &
+            rCLig_in
 
        REAL(KIND=wp), dimension (nbox, nbox) ::                        & 
             Kin,                                                       &
@@ -186,7 +187,7 @@
 
               
        ! Set the output filename
-              filename_csv = 'ensemble8_noprokaryotes.csv'
+              filename_csv = 'ensemble18.csv'
 
 !=======================================================================
 ! Time parameters
@@ -214,18 +215,18 @@
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
        allocate ( rFeC_pb_ens  (1:1) )
-       allocate ( mu0_ens      (1:1) )
-       allocate ( m_l_ens      (1:1) )
+       allocate ( mu0_ens      (1:3) )
+       allocate ( m_l_ens      (1:4) )
        allocate ( m_q_ens      (1:1) )
        allocate ( kappa_ens    (1:1) )
-       allocate ( kfe_p_ens    (1:1) )
-       allocate ( kldoc_p_ens  (1:1) )
+       allocate ( kfe_p_ens    (1:2) )
+       allocate ( kldoc_p_ens  (1:2) )
        allocate ( pge_ens      (1:1) )
-       allocate ( phi_ens      (1:1) )
+       allocate ( phi_ens      (1:3) )
        allocate ( rCLig_ens    (1:1) )
-       allocate ( lt_lifein_ens(1:6) )
-       allocate ( ligphi_ens   (1:10) )
-       allocate ( lt_lifetime_factor_ens(1:6) )
+       allocate ( lt_lifein_ens(1:1) )
+       allocate ( ligphi_ens   (1:3) )
+       allocate ( lt_lifetime_factor_ens(1:1) )
 !=======================================================================
 
 ! Initialize input arguements
@@ -240,8 +241,8 @@
        fein     =      1._wp
        ltin     =      2._wp
        atpco2in =    280._wp
-       pbin     =      0._wp ! in cells µL-1
-       ldocin   =      0.0_wp ! in mumol kg-1
+       pbin     =      100._wp ! in cells µL-1
+       ldocin   =      2.0_wp ! in mumol kg-1
        
 ! Overturning and mixing rates (m3/s)
 !       psi_in = 20.e6_wp
@@ -288,16 +289,16 @@
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
 
-       !rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
+       ! rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
        rFeC_pb_ens(1) = 40._wp * 1.e-6_wp
        ! rFeC_pb_ens(3) = 80._wp * 1.e-6_wp
 
 ! Prokaryotic maximum growth rate
 
-       mu0_ens(1)  = 0.0_wp
-       ! mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
-       ! mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
-       ! mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd !
+       ! mu0_ens(1)  = 0.0_wp
+       mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
+       mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
+       mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd !
 
        ! mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd ! 
        ! mu0_ens(4)  = 10._wp  * 1.0_wp/sperd ! 
@@ -311,10 +312,10 @@
 
        ! m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(2)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
-       ! m_l_ens(3)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(1)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
-       ! m_l_ens(2)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
-       ! m_l_ens(2)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(2)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(3)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(4)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(4)  = 1.0e-6_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(3)  = 1.0e-7_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(9) = 0                        ! in units of s-1
@@ -330,28 +331,28 @@
 
 ! fraction of dead prokaryotic biomass that released as LDOC
 
-       kappa_ens(1) = 0.0_wp
-       ! kappa_ens(2) = 1.0_wp
+       ! kappa_ens(1) = 0.0_wp
+       kappa_ens(1) = 1.0_wp
        
 
 
 ! Prokaryotic half saturation constant for iron
 
-       ! kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
-       kfe_p_ens(1) = 1.0e-9_wp  *conv_molkg_molm3
+       kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
+       kfe_p_ens(2) = 1.0e-9_wp  *conv_molkg_molm3
        ! kfe_p_ens(3) = 1.0e-8_wp  *conv_molkg_molm3
 
 ! Prokaryotic half saturation constant for LDOC
 
        ! kldoc_p_ens(1) = 1.0e-7_wp *conv_molkg_molm3
        kldoc_p_ens(1) = 1.0e-6_wp *conv_molkg_molm3
-       ! kldoc_p_ens(2) = 1.0e-5_wp *conv_molkg_molm3
+       kldoc_p_ens(2) = 1.0e-5_wp *conv_molkg_molm3
 
 ! Prokaryotic growth efficiency
        pge_ens(1) = 0.25_wp
 
 ! LDOC parameters
-       phi_ens(1) = 0.0_wp
+       ! phi_ens(1) = 0.0_wp
        ! phi_ens(1) = 1.0e-10_wp
        ! phi_ens(2) = 1.0e-9_wp
        ! phi_ens(3) = 1.0e-8_wp
@@ -359,43 +360,46 @@
        ! phi_ens(2) = 1.0e-6_wp
        ! phi_ens(1) = 1.0e-5_wp
        ! phi_ens(2) = 1.0e-4_wp
-       ! phi_ens(2) = 1.0e-3_wp
-       ! phi_ens(3) = 1.0e-2_wp
+       phi_ens(1) = 5.0e-3_wp
+       phi_ens(2) = 1.0e-2_wp
+       phi_ens(3) = 2.0e-2_wp
+       
 
 ! Ligand parameters
        ! rCLig_ens(1) = 15.0_wp
        rCLig_ens(1) = 30.0_wp
 
 ! Ligand lifetimes for the surface ocean
-       lt_lifein_ens(1) = 1._wp * 365._wp * 24._wp * 3600._wp
-       lt_lifein_ens(2) = 5._wp * 365._wp * 24._wp * 3600._wp
-       lt_lifein_ens(3) = 10._wp * 365._wp * 24._wp * 3600._wp
-       lt_lifein_ens(4) = 50.0_wp * 365._wp * 24._wp * 3600._wp
-       lt_lifein_ens(5) = 100.0_wp * 365._wp * 24._wp * 3600._wp
-       lt_lifein_ens(6) = 1000.0_wp * 365._wp * 24._wp * 3600._wp
+       lt_lifein_ens(1) = 0.0_wp ! automatically sets the ad-hoc term to zero
+       ! lt_lifein_ens(1) = 1._wp * 365._wp * 24._wp * 3600._wp
+       ! lt_lifein_ens(2) = 5._wp * 365._wp * 24._wp * 3600._wp
+       ! lt_lifein_ens(3) = 10._wp * 365._wp * 24._wp * 3600._wp
+       ! lt_lifein_ens(4) = 50.0_wp * 365._wp * 24._wp * 3600._wp
+       ! lt_lifein_ens(5) = 100.0_wp * 365._wp * 24._wp * 3600._wp
+       ! lt_lifein_ens(6) = 1000.0_wp * 365._wp * 24._wp * 3600._wp
 
 ! Ligand production rates as fraction of the primary production
-       ligphi_ens(1) = 1.0e-8_wp
-       ligphi_ens(2) = 5.0e-8_wp
-       ligphi_ens(3) = 1.0e-7_wp
-       ligphi_ens(4) = 5.0e-7_wp
-       ligphi_ens(5) = 1.0e-6_wp
-       ligphi_ens(6) = 5.0e-6_wp
-       ligphi_ens(7) = 1.0e-5_wp
-       ligphi_ens(8) = 5.0e-5_wp
-       ligphi_ens(9) = 1.0e-4_wp
-       ligphi_ens(10) = 1.0e-3_wp
+       ! ligphi_ens(1) = 1.0e-8_wp
+       ! ligphi_ens(2) = 5.0e-8_wp
+       ! ligphi_ens(3) = 1.0e-7_wp
+       ligphi_ens(1) = 1.0e-5_wp
+       ligphi_ens(2) = 5.0e-5_wp
+       ligphi_ens(3) = 1.0e-4_wp
+       ! ligphi_ens(3) = 1.0e-5_wp
+       ! ligphi_ens(8) = 5.0e-5_wp
+       ! ligphi_ens(9) = 1.0e-4_wp
+       ! ligphi_ens(10) = 1.0e-3_wp
 
 ! Deep ocean box lifetime modifier, longer lifetime in the deep ocean
        lt_lifetime_factor_ens(1) = 1.0_wp
-       lt_lifetime_factor_ens(2) = 5.0_wp
-       lt_lifetime_factor_ens(3) = 10.0_wp
-       lt_lifetime_factor_ens(4) = 50.0_wp
-       lt_lifetime_factor_ens(5) = 100.0_wp
-       lt_lifetime_factor_ens(6) = 1000.0_wp
+       ! lt_lifetime_factor_ens(2) = 5.0_wp
+       ! lt_lifetime_factor_ens(3) = 10.0_wp
+       ! lt_lifetime_factor_ens(4) = 50.0_wp
+       ! lt_lifetime_factor_ens(5) = 100.0_wp
+       ! lt_lifetime_factor_ens(6) = 1000.0_wp
 
 ! File number identifier start for the ensemble
-       id0            =     35000
+       id0            =     57000
 
 ! Array inputs
 #if defined(SIXBOX)
@@ -734,6 +738,9 @@ DO irFeC_pb = 1, size(rFeC_pb_ens)
 
                                                         dldz_in(1:3)  = [ 1._wp, 1._wp, 1.0_wp / lt_lifetime_factor ]
 
+                                                        ! part of the deep box ligands are refractory, assumed 50%
+                                                        rCLig_in(1:3) = [ rCLig, rCLig, rCLig / 10.0_wp ]
+
                                                  call model(                                                    &
                                                         id,                                                        &
                                                         filename_csv,                                              &
@@ -757,6 +764,7 @@ DO irFeC_pb = 1, size(rFeC_pb_ens)
                                                         fe_input,                                                  &
                                                         wind_in,                                                   &
                                                         fopen_in,                                                  &
+                                                        rCLig_in,                                                  &
                                                         thin,                                                      &
                                                         sain,                                                      &
                                                         cain,                                                      &

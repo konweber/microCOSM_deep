@@ -43,6 +43,7 @@ IMPLICIT NONE
             fe_input,                                                  &
             wind_in,                                                   &
             fopen_in,                                                  &
+            rCLig_in,                                                  &
             thin,                                                      &
             sain,                                                      &
             cain,                                                      &
@@ -104,7 +105,8 @@ IMPLICIT NONE
             fopen_in,                                                  &
             eratio_in,                                                 &
             pbin,                                                      &
-            ldocin
+            ldocin,                                                    &
+            rCLig_in
 
        REAL(KIND=wp), intent(in), dimension (nbox, nbox) ::            &
             Kin, Rin, Pin
@@ -553,7 +555,7 @@ IF (ANY(ldoc <= 0.0_wp .OR. ldoc == 0.0_wp)) THEN
    dltdt = dltdt + (ligP * rCP - lambda * lt)
 ELSE
    ! Perform the original calculation
-   dltdt = dltdt + (ligP * rCP - lambda * lt - lt/ldoc * rCLig * pbp * cellsm32molm3 * 1.0_wp/pge) + ligphi * pbl * cellsm32molm3
+   dltdt = dltdt + (ligP * rCP - lambda * lt - lt/ldoc * rCLig_in * pbp * cellsm32molm3 * 1.0_wp/pge) + ligphi * pbl * cellsm32molm3
    ! need to add term that accounts for the production of ligands through turnover of prokaryotic biomass
 ENDIF
        ! Could also add a production term by prokaryotes here (pi term)
