@@ -7,7 +7,7 @@ IMPLICIT NONE
 
 ! timestepping variables
 INTEGER                  :: nstepmax
-REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 2._wp !24._wp / 10._wp
+REAL(KIND=wp), PARAMETER :: dt           = 86400._wp / 2._wp !/ 10._wp
 REAL(KIND=wp), PARAMETER :: sperd        = 86400._wp
 REAL(KIND=wp), PARAMETER :: dperyr       = 365._wp
 REAL(KIND=wp), PARAMETER :: speryr       = 31536000._wp

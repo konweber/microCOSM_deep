@@ -187,13 +187,13 @@
 
               
        ! Set the output filename
-              filename_csv = 'ensemble18.csv'
+              filename_csv = 'ensemble18_5.csv'
 
 !=======================================================================
 ! Time parameters
        ! Input some initial parameters
-       maxyears   = 1.0e4_wp
-       outputyears= 1.0e4_wp
+       maxyears   = 1.0e3_wp
+       outputyears= 2.5e1_wp
        outstepmax = int((maxyears/outputyears)+1)
 !=======================================================================
        
@@ -215,15 +215,15 @@
        allocate ( pbout     (outstepmax,nbox) )
        allocate ( ldocout   (outstepmax,nbox) )
        allocate ( rFeC_pb_ens  (1:1) )
-       allocate ( mu0_ens      (1:3) )
-       allocate ( m_l_ens      (1:4) )
-       allocate ( m_q_ens      (1:1) )
-       allocate ( kappa_ens    (1:1) )
-       allocate ( kfe_p_ens    (1:2) )
-       allocate ( kldoc_p_ens  (1:2) )
-       allocate ( pge_ens      (1:1) )
+       allocate ( mu0_ens      (1:1) )
+       allocate ( m_l_ens      (1:3) )
+       allocate ( m_q_ens      (1:3) )
+       allocate ( kappa_ens    (1:2) )
+       allocate ( kfe_p_ens    (1:3) )
+       allocate ( kldoc_p_ens  (1:3) )
+       allocate ( pge_ens      (1:3) )
        allocate ( phi_ens      (1:3) )
-       allocate ( rCLig_ens    (1:1) )
+       allocate ( rCLig_ens    (1:3) )
        allocate ( lt_lifein_ens(1:1) )
        allocate ( ligphi_ens   (1:3) )
        allocate ( lt_lifetime_factor_ens(1:1) )
@@ -289,20 +289,18 @@
 ! Prokaryotic parameters
 ! Prokaryotic biomass carbon to iron ratio
 
-       ! rFeC_pb_ens(1) = 5.0_wp * 1.e-6_wp
+       ! rFeC_pb_ens(1) = 20.0_wp * 1.e-6_wp
        rFeC_pb_ens(1) = 40._wp * 1.e-6_wp
-       ! rFeC_pb_ens(3) = 80._wp * 1.e-6_wp
+       ! rFeC_pb_ens(1) = 80._wp * 1.e-6_wp
 
 ! Prokaryotic maximum growth rate
 
        ! mu0_ens(1)  = 0.0_wp
-       mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
-       mu0_ens(2)  = 0.1_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
-       mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd !
-
-       ! mu0_ens(3)  = 1.0_wp  * 1.0_wp/sperd ! 
-       ! mu0_ens(4)  = 10._wp  * 1.0_wp/sperd ! 
-       ! mu0_ens(5)  = 100._wp * 1.0_wp/sperd ! 
+       ! mu0_ens(1)  = 0.01_wp * 1.0_wp/sperd ! 
+       ! mu0_ens(1)  = 0.02_wp  * 1.0_wp/sperd ! 0.1 d-1, in units of s-1
+       ! mu0_ens(3)  = 0.03_wp  * 1.0_wp/sperd !
+       ! mu0_ens(4)  = 0.04_wp  * 1.0_wp/sperd ! 
+       mu0_ens(1)  = 0.05_wp  * 1.0_wp/sperd !  
        
 
 
@@ -312,10 +310,10 @@
 
        ! m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(2)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(2)  = 1.0e-3_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(3)  = 1.0e-4_wp * 1.0_wp/sperd ! in units of s-1
-       m_l_ens(4)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       ! m_l_ens(1)  = 1.0e-2_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(1)  = 1.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(2)  = 5.0e-5_wp * 1.0_wp/sperd ! in units of s-1
+       m_l_ens(3)  = 5.0e-6_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(4)  = 1.0e-6_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(3)  = 1.0e-7_wp * 1.0_wp/sperd ! in units of s-1
        ! m_l_ens(9) = 0                        ! in units of s-1
@@ -323,33 +321,35 @@
 ! Prokaryotic quadratic mortality rate
 
        m_q_ens(1)  = 1.0e-19_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       ! m_q_ens(2)  = 1.0e-20_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
-       ! m_q_ens(2)  = 1.0e-21_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(2)  = 1.0e-20_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
+       m_q_ens(3)  = 1.0e-18_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
        ! m_q_ens(4)  = 1.0e-22_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
        ! m_q_ens(3)  = 1.0e-23_wp ! treat pb in cells per m3, this is in units of m3 per cell per s
 
 
 ! fraction of dead prokaryotic biomass that released as LDOC
 
-       ! kappa_ens(1) = 0.0_wp
        kappa_ens(1) = 1.0_wp
+       kappa_ens(2) = 0.0_wp
        
 
 
 ! Prokaryotic half saturation constant for iron
 
        kfe_p_ens(1) = 1.0e-10_wp *conv_molkg_molm3
-       kfe_p_ens(2) = 1.0e-9_wp  *conv_molkg_molm3
-       ! kfe_p_ens(3) = 1.0e-8_wp  *conv_molkg_molm3
+       kfe_p_ens(2) = 5.0e-10_wp  *conv_molkg_molm3
+       kfe_p_ens(3) = 1.0e-9_wp  *conv_molkg_molm3
 
 ! Prokaryotic half saturation constant for LDOC
 
-       ! kldoc_p_ens(1) = 1.0e-7_wp *conv_molkg_molm3
-       kldoc_p_ens(1) = 1.0e-6_wp *conv_molkg_molm3
-       kldoc_p_ens(2) = 1.0e-5_wp *conv_molkg_molm3
+       kldoc_p_ens(1) = 1.0e-5_wp *conv_molkg_molm3
+       kldoc_p_ens(2) = 5.0e-5_wp *conv_molkg_molm3
+       kldoc_p_ens(3) = 1.0e-4_wp *conv_molkg_molm3
 
 ! Prokaryotic growth efficiency
        pge_ens(1) = 0.25_wp
+       pge_ens(2) = 0.2_wp
+       pge_ens(3) = 0.3_wp
 
 ! LDOC parameters
        ! phi_ens(1) = 0.0_wp
@@ -361,13 +361,14 @@
        ! phi_ens(1) = 1.0e-5_wp
        ! phi_ens(2) = 1.0e-4_wp
        phi_ens(1) = 5.0e-3_wp
-       phi_ens(2) = 1.0e-2_wp
-       phi_ens(3) = 2.0e-2_wp
+       phi_ens(2) = 2.5e-3_wp
+       phi_ens(3) = 1.0e-2_wp
        
 
 ! Ligand parameters
-       ! rCLig_ens(1) = 15.0_wp
-       rCLig_ens(1) = 30.0_wp
+       rCLig_ens(1) = 20.0_wp
+       rCLig_ens(2) = 30.0_wp
+       rCLig_ens(3) = 40.0_wp
 
 ! Ligand lifetimes for the surface ocean
        lt_lifein_ens(1) = 0.0_wp ! automatically sets the ad-hoc term to zero
@@ -382,10 +383,10 @@
        ! ligphi_ens(1) = 1.0e-8_wp
        ! ligphi_ens(2) = 5.0e-8_wp
        ! ligphi_ens(3) = 1.0e-7_wp
-       ligphi_ens(1) = 1.0e-5_wp
+       ! ligphi_ens(1) = 1.0e-5_wp
+       ligphi_ens(1) = 1.0e-4_wp
        ligphi_ens(2) = 5.0e-5_wp
-       ligphi_ens(3) = 1.0e-4_wp
-       ! ligphi_ens(3) = 1.0e-5_wp
+       ligphi_ens(3) = 2.0e-4_wp
        ! ligphi_ens(8) = 5.0e-5_wp
        ! ligphi_ens(9) = 1.0e-4_wp
        ! ligphi_ens(10) = 1.0e-3_wp
@@ -399,7 +400,7 @@
        ! lt_lifetime_factor_ens(6) = 1000.0_wp
 
 ! File number identifier start for the ensemble
-       id0            =     57000
+       id0            =     400000
 
 ! Array inputs
 #if defined(SIXBOX)
